@@ -27,6 +27,12 @@ class Mario(Sprite):
         self.walking_index = 0
         self.update_after_frames = 5
 
+        # Mutex used to prevent jumping while already in the air
+        self.jump_active = False
+        self.y_velocity = 0
+        self.gravity = 1.2
+        self.delta_t = 0
+
     def load_image_list(self, image_list, start_x, start_y, x_offset, y_offset,
                         width, height, scale_width, scale_height, number_sprites):
         for i in range(0, number_sprites):
@@ -71,10 +77,30 @@ class Mario(Sprite):
                 self.image = self.image_list[self.walking_index]
                 self.image = pygame.transform.flip(self.image, True, False)
 
+        if self.jump_active == True:
+            self.delta_t += 1 # where this is time
+            self.y_velocity -= self.gravity * self.delta_t / 10
+            self.image = self.image_list[5]
+            if self.last_moved_direction == 'left':
+                self.image = pygame.transform.flip(self.image, True, False)
+
+        self.rect.y -= self.y_velocity
+        # player hits the ground
+        if self.rect.y >= 300:
+            self.jump_active = False
+            self.y_velocity = 0
+            self.delta_t = 0
+            self.rect.y = 300
+
     def change_direction(self, new_direction):
         self.last_moved_direction = self.direction
         self.direction = new_direction
         self.step_tracker = 0
+
+    def jump(self):
+        if not self.jump_active:
+            self.jump_active = True
+            self.y_velocity = 20
 
     def blitme(self):
         self.screen.blit(self.image, self.rect)

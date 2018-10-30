@@ -29,6 +29,8 @@ def check_events(mario):
                 mario.change_direction('right')
             if event.key == pygame.K_LEFT:
                 mario.change_direction('left')
+            if event.key == pygame.K_SPACE:
+                mario.jump()
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT:
