@@ -21,6 +21,8 @@ class Mario(Sprite):
         self.rect.y = 300
 
         self.direction = 'still'
+        self.moving_right = False
+        self.moving_left = False
         # Used to figure out which direction to draw the still standing sprite
         self.last_moved_direction = 'right'
         self.step_tracker = 0
@@ -30,8 +32,9 @@ class Mario(Sprite):
         # Mutex used to prevent jumping while already in the air
         self.jump_active = False
         self.y_velocity = 0
-        self.gravity = 1.2
+        self.gravity = 2
         self.delta_t = 0
+        self.movement_speed = 5
 
     def load_image_list(self, image_list, start_x, start_y, x_offset, y_offset,
                         width, height, scale_width, scale_height, number_sprites):
@@ -45,14 +48,14 @@ class Mario(Sprite):
         if self.step_tracker > 30:
             self.step_tracker = 1
 
-        if self.direction == 'still':
+        if self.moving_left == False and self.moving_right == False:
             self.image = self.image_list[0]
 
             if self.last_moved_direction == 'left':
                 self.image = pygame.transform.flip(self.image, True, False)
 
-        elif self.direction == 'right':
-            # self.rect.x += 1
+        elif self.moving_right:
+            self.rect.x += self.movement_speed
 
             if self.step_tracker == 1:
                 self.image = self.image_list[self.walking_index]
@@ -63,8 +66,8 @@ class Mario(Sprite):
                     self.walking_index = 1
                 self.image = self.image_list[self.walking_index]
 
-        elif self.direction == 'left':
-            # self.rect.x -= 1
+        elif self.moving_left:
+            self.rect.x -= self.movement_speed
 
             if self.step_tracker == 1:
                 self.image = self.image_list[self.walking_index]
@@ -77,16 +80,16 @@ class Mario(Sprite):
                 self.image = self.image_list[self.walking_index]
                 self.image = pygame.transform.flip(self.image, True, False)
 
-        if self.jump_active == True:
+        if self.jump_active:
             self.delta_t += 1 # where this is time
             self.y_velocity -= self.gravity * self.delta_t / 10
             self.image = self.image_list[5]
-            if self.last_moved_direction == 'left':
+            if self.direction == 'left' or self.last_moved_direction == 'left':
                 self.image = pygame.transform.flip(self.image, True, False)
 
         self.rect.y -= self.y_velocity
-        # player hits the ground
-        if self.rect.y >= 300:
+
+        if self.rect.y >= 300:  # player hits the ground
             self.jump_active = False
             self.y_velocity = 0
             self.delta_t = 0
@@ -96,6 +99,10 @@ class Mario(Sprite):
         self.last_moved_direction = self.direction
         self.direction = new_direction
         self.step_tracker = 0
+        if new_direction == 'left':
+            self.moving_left = True
+        elif new_direction == 'right':
+            self.moving_right = True
 
     def jump(self):
         if not self.jump_active:

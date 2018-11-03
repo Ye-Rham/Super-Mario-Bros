@@ -17,6 +17,8 @@ def run_game():
         mario.update()
         mario.blitme()
 
+        print("mario moving left?: " + str(mario.moving_left))
+
         pygame.display.flip()
 
 
@@ -35,8 +37,13 @@ def check_events(mario):
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT:
                 mario.change_direction('still')
+                mario.moving_right = False
+                print("not moving right")
             if event.key == pygame.K_LEFT:
                 mario.change_direction('still')
+                mario.moving_left = False
+                print("not moving left")
+
 
 
 run_game()
