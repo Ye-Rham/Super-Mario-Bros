@@ -1,19 +1,20 @@
 import pygame
 from pygame.sprite import Sprite
-from sprite_sheet import SpriteSheet
 
 
 class Mario(Sprite):
 
-    def __init__(self, screen):
+    def __init__(self, settings, screen, sprite_sheet):
         super(Mario, self).__init__()
+        self.settings = settings
         self.screen = screen
 
         # Sprite Sizes: Big - 16x32, Small - 16x16
-        self.sprite_sheet = SpriteSheet("images/NES - Super Mario Bros - Mario & Luigi.png", self.screen)
+        self.sprite_sheet = sprite_sheet
         self.transparent_color = (146, 39, 143)
         self.image_list = []
-        self.load_image_list(self.image_list, 80, 0, 17, 0, 16, 32, 64, 128, 21)
+        self.load_image_list(self.image_list, 80, 0, 17, 0, 16, 32, self.settings.scale["tile_width"],
+                             self.settings.scale["tile_height"] * 2, 21)
         self.image = self.image_list[0]
 
         self.rect = self.image.get_rect()
