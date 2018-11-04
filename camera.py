@@ -12,17 +12,17 @@ class Camera:
         self.cap = None  # end of level
 
     def camera_tracking(self, mario):
-        # Slowly catch the camera location up // mario.direction == 'right' and
+        # Slowly catch the camera location up
         if self.settings.screen_width/4 <= mario.rect.centerx - self.rect.x < self.settings.screen_width/2 and \
-                int(self.rect.right/self.settings.scale["tile_width"]) < self.cap:
+                int(self.rect.right/self.settings.scale["tile_width"]) < self.cap and mario.moving_right:
             self.rect.x += mario.x_velocity/2
             if int(self.rect.x/self.settings.scale["tile_width"]) > self.cap:
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
 
-        # Camera is in the right position, move it with mario// mario.direction == 'right' and
+        # Camera is in the right position, move it with mario
         elif mario.rect.centerx - self.rect.x >= self.settings.screen_width/2 and \
-                int(self.rect.right/self.settings.scale["tile_width"]) < self.cap:
+                int(self.rect.right/self.settings.scale["tile_width"]) < self.cap and mario.moving_right:
             self.rect.x += mario.x_velocity
             if (self.rect.x/self.settings.scale["tile_width"]) > self.cap:
                 self.rect.x = self.cap

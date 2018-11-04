@@ -91,8 +91,10 @@ class Mario(Sprite):
             self.moving_right = False
         if self.x_velocity < 0:
             self.moving_left = True
+            self.moving_right = False
         if self.x_velocity > 0:
             self.moving_right = True
+            self.moving_left = False
 
         self.x_velocity = self.calculate_changed_velocity()
 
