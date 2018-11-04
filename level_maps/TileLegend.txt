@@ -1,0 +1,17 @@
+G# = Ground Tile
+M0-5 = Mountain Tile
+C0-5 = Cloud Tile
+S0-2 = Shrub Tile
+P0-9 = Pipe Tile
+F0-6 = Fortress Tile
+?0 = ? Block Coin
+?1 = ? Block Powerup
+B0 = Brick Block Breakable
+B1 = Brick Block Coins
+B2 = Brick Block Star
+H0 = Hidden 1UP Block
+WP = Warp Point
+WE = Warp Exit
+EP = End Flag Pole
+EF = End Flag
+IC = Coin

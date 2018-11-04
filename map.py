@@ -18,17 +18,17 @@ class Tile(Sprite):
         self.block_type = block_type  # 0 = ? Block Coin, 1 = ? Block Powerup, 2 = Breakable Bricks, 3 = Coin Bricks,
         # 4 = Star Bricks, 5 = Hidden 1UP
 
-    def draw(self):
+    def draw(self, x_offset):
         if not isinstance(self.tile_sprite, list) and not self.block_type == 5:
-            self.screen.blit(self.tile_sprite, self.rect)
+            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, 0))
         elif self.block_type == 5 and not self.active:
-            self.screen.blit(self.tile_sprite, self.rect)
+            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, 0))
         elif not self.block_type == 5:
-            self.screen.blit(self.tile_sprite[self.frame], self.rect)
+            self.screen.blit(self.tile_sprite[self.frame], self.rect.move(x_offset, 0))
 
 
 class Map:
-    def __init__(self, settings, screen, mapfile, tileset):
+    def __init__(self, settings, screen, mapfile, tileset, camera):
         self.settings = settings
         self.screen = screen
         self.textmap = open(mapfile, "r")
@@ -39,9 +39,14 @@ class Map:
         self.textmap.close()
         self.tileset = tileset  # Separate tilesets for levels
 
-    def build_map(self, background, foreground, blocks, hidden_blocks, coins):
+        camera.cap = len(self.mapmatrix[0]) - 1
+
+    def initialize_map(self, camera, background, foreground, blocks, hidden_blocks, coins):
+        x_length = camera.milestone + 1
+        if x_length > camera.cap:
+            x_length = camera.cap
         for y in range(len(self.mapmatrix)):
-            for x in range(len(self.mapmatrix[y])):
+            for x in range(x_length):
                 if self.mapmatrix[y][x][0] == "G":
                     newtile = Tile(self.settings, self.screen, self.tileset[0 + int(self.mapmatrix[y][x][1])], x, y,
                                    False, None)
@@ -63,7 +68,7 @@ class Map:
                                    False, None)
                     background.add(newtile)
                 elif self.mapmatrix[y][x][0] == "F":
-                    newtile = Tile(self.settings, self.screen, self.tileset[88 + int(self.mapmatrix[y][x][1])], x, y,
+                    newtile = Tile(self.settings, self.screen, self.tileset[24 + int(self.mapmatrix[y][x][1])], x, y,
                                    False, None)
                     background.add(newtile)
                 elif self.mapmatrix[y][x][0] == "?":
@@ -71,7 +76,69 @@ class Map:
                                    x, y, True,  int(self.mapmatrix[y][x][1]))
                     blocks.add(newtile)
                 elif self.mapmatrix[y][x][0] == "B":
-                    newtile = Tile(self.settings, self.screen, self.tileset[3:7:4], x, y,
+                    newtile = Tile(self.settings, self.screen, self.tileset[2:6:4], x, y,
+                                   False,  int(self.mapmatrix[y][x][1]) + 2)
+                    blocks.add(newtile)
+                elif self.mapmatrix[y][x][0] == "H":
+                    newtile = Tile(self.settings, self.screen, self.tileset[55], x, y,
+                                   False,  int(self.mapmatrix[y][x][1]) + 5)
+                    hidden_blocks.add(newtile)
+                elif self.mapmatrix[y][x][0] == "IC":
+                    newtile = Tile(self.settings, self.screen, self.tileset[49:54:2],
+                                   x, y, True,  None)
+                    coins.add(newtile)
+
+    def sprite_cycler(self, camera, background, foreground, blocks, hidden_blocks, coins):
+        for tile in background:
+            if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
+                tile.kill()
+        for tile in foreground:
+            if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
+                tile.kill()
+        for tile in blocks:
+            if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
+                tile.kill()
+        for tile in hidden_blocks:
+            if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
+                tile.kill()
+        for entity in coins:
+            if entity.rect.x <= camera.rect.x - self.settings.screen_width/2:
+                entity.kill()
+        if int((camera.rect.right + camera.rect.width/2)/self.settings.scale["tile_width"]) > camera.milestone \
+                and camera.milestone < camera.cap:
+            camera.milestone = int((camera.rect.right + camera.rect.width/2)/self.settings.scale["tile_width"])
+            x = camera.milestone
+            for y in range(len(self.mapmatrix)):
+                if self.mapmatrix[y][x][0] == "G":
+                    newtile = Tile(self.settings, self.screen, self.tileset[0 + int(self.mapmatrix[y][x][1])], x, y,
+                                   False, None)
+                    foreground.add(newtile)
+                elif self.mapmatrix[y][x][0] == "P":
+                    newtile = Tile(self.settings, self.screen, self.tileset[56 + int(self.mapmatrix[y][x][1])], x, y,
+                                   False, None)
+                    foreground.add(newtile)
+                elif self.mapmatrix[y][x][0] == "M":
+                    newtile = Tile(self.settings, self.screen, self.tileset[72 + int(self.mapmatrix[y][x][1])], x, y,
+                                   False, None)
+                    background.add(newtile)
+                elif self.mapmatrix[y][x][0] == "C":
+                    newtile = Tile(self.settings, self.screen, self.tileset[90 + int(self.mapmatrix[y][x][1])], x, y,
+                                   False, None)
+                    background.add(newtile)
+                elif self.mapmatrix[y][x][0] == "S":
+                    newtile = Tile(self.settings, self.screen, self.tileset[78 + int(self.mapmatrix[y][x][1])], x, y,
+                                   False, None)
+                    background.add(newtile)
+                elif self.mapmatrix[y][x][0] == "F":
+                    newtile = Tile(self.settings, self.screen, self.tileset[22 + int(self.mapmatrix[y][x][1])], x, y,
+                                   False, None)
+                    background.add(newtile)
+                elif self.mapmatrix[y][x][0] == "?":
+                    newtile = Tile(self.settings, self.screen, self.tileset[48:55:2],
+                                   x, y, True,  int(self.mapmatrix[y][x][1]))
+                    blocks.add(newtile)
+                elif self.mapmatrix[y][x][0] == "B":
+                    newtile = Tile(self.settings, self.screen, self.tileset[2:6:4], x, y,
                                    False,  int(self.mapmatrix[y][x][1]) + 2)
                     blocks.add(newtile)
                 elif self.mapmatrix[y][x][0] == "H":
