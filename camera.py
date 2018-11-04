@@ -12,23 +12,21 @@ class Camera:
         self.cap = None  # end of level
 
     def camera_tracking(self, mario):
-        if mario.direction == 'right' and \
-                self.settings.screen_width/4 <= mario.rect.centerx - self.rect.x < self.settings.screen_width/2 and \
+        # Slowly catch the camera location up // mario.direction == 'right' and
+        if self.settings.screen_width/4 <= mario.rect.centerx - self.rect.x < self.settings.screen_width/2 and \
                 int(self.rect.right/self.settings.scale["tile_width"]) < self.cap:
-            print(1)
-            self.rect.x += mario.movement_speed/2
+            self.rect.x += mario.x_velocity/2
             if int(self.rect.x/self.settings.scale["tile_width"]) > self.cap:
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
-        elif mario.direction == 'right' and mario.rect.centerx - self.rect.x >= self.settings.screen_width/2 and \
+
+        # Camera is in the right position, move it with mario// mario.direction == 'right' and
+        elif mario.rect.centerx - self.rect.x >= self.settings.screen_width/2 and \
                 int(self.rect.right/self.settings.scale["tile_width"]) < self.cap:
-            self.rect.x += mario.movement_speed
+            self.rect.x += mario.x_velocity
             if (self.rect.x/self.settings.scale["tile_width"]) > self.cap:
-                print(self.cap)
-                print(self.rect.x)
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
-            print(self.x_offset)
 
     def update_screen(self, screen, background, foreground, blocks, hidden_blocks, coins, mario):
         screen.fill(self.settings.bg_color[0])
