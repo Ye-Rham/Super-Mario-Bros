@@ -16,13 +16,13 @@ class Camera:
                 self.settings.screen_width/4 <= mario.rect.centerx - self.rect.x < self.settings.screen_width/2 and \
                 int(self.rect.right/self.settings.scale["tile_width"]) < self.cap:
             print(1)
-            self.rect.x += mario.x_velocity/2
+            self.rect.x += mario.movement_speed/2
             if int(self.rect.x/self.settings.scale["tile_width"]) > self.cap:
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
         elif mario.direction == 'right' and mario.rect.centerx - self.rect.x >= self.settings.screen_width/2 and \
                 int(self.rect.right/self.settings.scale["tile_width"]) < self.cap:
-            self.rect.x += mario.x_velocity
+            self.rect.x += mario.movement_speed
             if (self.rect.x/self.settings.scale["tile_width"]) > self.cap:
                 print(self.cap)
                 print(self.rect.x)
