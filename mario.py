@@ -103,5 +103,5 @@ class Mario(Sprite):
             self.jump_active = True
             self.y_velocity = 20
 
-    def blitme(self):
-        self.screen.blit(self.image, self.rect)
+    def blitme(self, x_offset):
+        self.screen.blit(self.image, self.rect.move(x_offset, 0))

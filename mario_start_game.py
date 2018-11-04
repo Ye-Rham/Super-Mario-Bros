@@ -5,6 +5,7 @@ import sys
 from game_settings import Settings
 from sprite_sheet import SpriteSheet
 from map import Map
+from camera import Camera
 from mario import Mario
 
 
@@ -18,14 +19,15 @@ def run_game():
     tilesets = []
     initialize_tilesets(settings, tile_spritesheet, tilesets)
 
+    camera = Camera(settings)
     mario = Mario(settings, screen, mario_spritesheet)
     background = Group()
     foreground = Group()
     blocks = Group()
     hidden_blocks = Group()
     coins = Group()
-    level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0])
-    level_1_1.build_map(background, foreground, blocks, hidden_blocks, coins)
+    level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
+    level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins)
 
     timer = pygame.time.Clock()
 
@@ -34,7 +36,9 @@ def run_game():
 
         check_events(mario)
         mario.update()
-        update_screen(settings, screen, background, foreground, blocks, hidden_blocks, coins, mario)
+        camera.camera_tracking(mario)
+        level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins)
+        camera.update_screen(screen, background, foreground, blocks, hidden_blocks, coins, mario)
 
 
 def check_events(mario):
@@ -73,32 +77,8 @@ def initialize_tilesets(settings, spritesheet, tilesets):
             tileset1_rects.append((x * 16, y * 16, 16, 16))
             tileset2_rects.append((x * 16, y * 16, 16, 16))
 
-    print(str(len(tileset1_rects)))
-    tilesets.append(spritesheet.images_at(tileset1_rects, settings.scale["tile_width"], settings.scale["tile_height"],
-                    colorkey=(255, 255, 255)))
-    tilesets.append(spritesheet.images_at(tileset2_rects, settings.scale["tile_width"], settings.scale["tile_height"],
-                    colorkey=(255, 255, 255)))
-
-
-def draw_level(background, foreground, blocks, hidden_blocks, coins):
-    for tile in background:
-        tile.draw()
-    for tile in foreground:
-        tile.draw()
-    for tile in blocks:
-        tile.draw()
-    for tile in hidden_blocks:
-        tile.draw()
-    for tile in coins:
-        tile.draw()
-
-
-def update_screen(settings, screen, background, foreground, blocks, hidden_blocks, coins, mario):
-    screen.fill(settings.bg_color[0])
-    draw_level(background, foreground, blocks, hidden_blocks, coins)
-    mario.blitme()
-
-    pygame.display.flip()
+    tilesets.append(spritesheet.images_at(tileset1_rects, settings.scale["tile_width"], settings.scale["tile_height"]))
+    tilesets.append(spritesheet.images_at(tileset2_rects, settings.scale["tile_width"], settings.scale["tile_height"]))
 
 
 run_game()
