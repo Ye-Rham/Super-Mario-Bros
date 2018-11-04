@@ -47,21 +47,21 @@ def check_events(mario):
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RIGHT:
-                mario.change_direction('right')
+                mario.change_sprite_image_direction('right')
                 mario.right_key_down = True
             if event.key == pygame.K_LEFT:
-                mario.change_direction('left')
+                mario.change_sprite_image_direction('left')
                 mario.left_key_down = True
             if event.key == pygame.K_SPACE:
                 mario.jump()
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT:
-                mario.change_direction('still')
+                mario.change_sprite_image_direction('still')
                 mario.right_key_down = False
                 #mario.moving_right = False
             if event.key == pygame.K_LEFT:
-                mario.change_direction('still')
+                mario.change_sprite_image_direction('still')
                 mario.left_key_down = False
                 #mario.moving_left = False
 

@@ -73,15 +73,28 @@ class Mario(Sprite):
                 if final_velocity < -self.max_walk_speed:
                     final_velocity = -self.max_walk_speed
         else:
-            final_velocity = self.walking_deceleration * 1 + self.x_velocity
-            if final_velocity < 0:
-                final_velocity = 0
+            if self.x_velocity > 0:
+                final_velocity = self.walking_deceleration * 1 + self.x_velocity
+                if final_velocity < 0:
+                    final_velocity = 0
+            elif self.x_velocity < 0:
+                final_velocity = -self.walking_deceleration * 1 + self.x_velocity
+                if final_velocity > 0:
+                    final_velocity = 0
 
         return final_velocity
 
     def update_velocity(self):
+
+        if self.x_velocity == 0.0:
+            self.moving_left = False
+            self.moving_right = False
+        if self.x_velocity < 0:
+            self.moving_left = True
+        if self.x_velocity > 0:
+            self.moving_right = True
+
         self.x_velocity = self.calculate_changed_velocity()
-        print(self.x_velocity)
 
     def load_image_list(self, image_list, start_x, start_y, x_offset, y_offset,
                         width, height, scale_width, scale_height, number_sprites):
@@ -92,24 +105,21 @@ class Mario(Sprite):
 
     def update(self):
         self.update_velocity()
+
+
         self.step_tracker += 1
         self.rect.x += self.x_velocity
-
-        if self.x_velocity is 0:
-            self.moving_left = False
-            self.moving_right = False
 
         if self.step_tracker > 30:
             self.step_tracker = 1
 
-        if self.left_key_down is False and self.right_key_down is False and self.x_velocity is 0:
+        if self.x_velocity < 0.1 and self.x_velocity > -0.1:
             self.image = self.image_list[0]
 
             if self.last_moved_direction == 'left':
                 self.image = pygame.transform.flip(self.image, True, False)
 
         else:
-
             if self.step_tracker == 1:
                 self.image = self.image_list[self.walking_index]
                 if self.x_velocity < 0 or self.left_key_down is True:
@@ -140,14 +150,10 @@ class Mario(Sprite):
             self.delta_t = 0
             self.rect.y = self.floor
 
-    def change_direction(self, new_direction):
+    def change_sprite_image_direction(self, new_direction):
         self.last_moved_direction = self.direction
         self.direction = new_direction
         self.step_tracker = 0
-        if new_direction == 'left':
-            self.moving_left = True
-        elif new_direction == 'right':
-            self.moving_right = True
 
     def jump(self):
         if not self.jump_active:
