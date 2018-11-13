@@ -1,4 +1,8 @@
 import pygame
+from animations import Popcoin
+from animations import Brokebricks
+from enemies import Goomba
+from enemies import GreenKoopa
 from pygame.sprite import Sprite
 
 
@@ -17,14 +21,79 @@ class Tile(Sprite):
         self.frame = 0
         self.block_type = block_type  # 0 = ? Block Coin, 1 = ? Block Powerup, 2 = Breakable Bricks, 3 = Coin Bricks,
         # 4 = Star Bricks, 5 = Hidden 1UP
+        self.time = 3000 # Time that the coins brick block stays active after hit
+        self.countdown = False # Check when mario hits coins brick block
+        self.y_offset = 0 # For block_push_animation
+        self.fall = False # For block_push_animation
 
-    def draw(self, x_offset):
+    def draw(self, x_offset, global_frame):
         if not isinstance(self.tile_sprite, list) and not self.block_type == 5:
-            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, 0))
+            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, self.y_offset))
+        elif not self.block_type == 5 and self.active and self.animated:
+            self.screen.blit(self.tile_sprite[global_frame], self.rect.move(x_offset, self.y_offset))
+        elif not self.block_type == 5 and self.active:
+            self.screen.blit(self.tile_sprite[0], self.rect.move(x_offset, self.y_offset))
+        elif not self.block_type == 5 and not self.active:
+            self.screen.blit(self.tile_sprite[len(self.tile_sprite)], self.rect.move(x_offset, self.y_offset))
         elif self.block_type == 5 and not self.active:
-            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, 0))
-        elif not self.block_type == 5:
-            self.screen.blit(self.tile_sprite[self.frame], self.rect.move(x_offset, 0))
+            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, self.y_offset))
+
+    def block_push_animation(self):
+        if not self.fall:
+            self.y_offset += 1
+            if self.y_offset == 4:
+                self.y_offset -= 2
+                self.fall = True
+        elif self.y_offset > 0:
+            self.y_offset -= 1
+            if self.y_offset == 0 and not self.active:
+                self.frame = len(self.tile_sprite)
+
+    def block_reaction(self, block_content_sprites, block_contents):
+        # Pushes out the contents of the block
+        if self.block_type == 0:
+            newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
+            block_contents.add(newpopcoin)
+            self.block_push_animation()
+            self.active = False
+        elif self.block_type == 1:
+            self.block_push_animation()
+            # spawn_powerup()
+            self.active = False
+        elif self.block_type == 2:
+            if True: # mario is big
+                newbrokebricks = Brokebricks(self.settings, self.screen, block_content_sprites[1], self.rect.center)
+                block_contents.add(newbrokebricks)
+                self.kill()
+            else:
+                self.block_push_animation()
+        elif self.block_type == 3:
+            if self.countdown:
+                newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
+                block_contents.add(newpopcoin)
+                self.block_push_animation()
+                if self.time == 0:
+                    self.active = False
+            else:
+                newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
+                block_contents.add(newpopcoin)
+                self.block_push_animation()
+                self.countdown = True
+
+        elif self.block_type == 4:
+            self.block_push_animation()
+            # spawn_star()
+            self.active = False
+        elif self.block_type == 5:
+            self.block_push_animation()
+            # spawn_1up()
+            self.active = False
+
+    @staticmethod
+    def expire_time(bricks):
+        for brick in bricks:
+            if brick.countdown and brick.active and brick.time > 0:
+                brick.time -= 1
 
 
 class Map:
@@ -41,12 +110,12 @@ class Map:
 
         camera.cap = len(self.mapmatrix[0]) - 1
 
-    def initialize_map(self, camera, background, foreground, blocks, hidden_blocks, coins):
+    def initialize_map(self, camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites):
         x_length = camera.milestone + 1
         if x_length > camera.cap:
             x_length = camera.cap
         for y in range(len(self.mapmatrix)):
-            for x in range(x_length):
+            for x in range(x_length + 1):
                 if self.mapmatrix[y][x][0] == "G":
                     newtile = Tile(self.settings, self.screen, self.tileset[0 + int(self.mapmatrix[y][x][1])], x, y,
                                    False, None)
@@ -62,6 +131,7 @@ class Map:
                 elif self.mapmatrix[y][x][0] == "C":
                     newtile = Tile(self.settings, self.screen, self.tileset[90 + int(self.mapmatrix[y][x][1])], x, y,
                                    False, None)
+                    coins.add(newtile)
                     background.add(newtile)
                 elif self.mapmatrix[y][x][0] == "S":
                     newtile = Tile(self.settings, self.screen, self.tileset[78 + int(self.mapmatrix[y][x][1])], x, y,
@@ -83,12 +153,20 @@ class Map:
                     newtile = Tile(self.settings, self.screen, self.tileset[55], x, y,
                                    False,  int(self.mapmatrix[y][x][1]) + 5)
                     hidden_blocks.add(newtile)
-                elif self.mapmatrix[y][x][0] == "IC":
+                elif self.mapmatrix[y][x][0] == "I":
                     newtile = Tile(self.settings, self.screen, self.tileset[49:54:2],
                                    x, y, True,  None)
                     coins.add(newtile)
+                if len(self.mapmatrix[y][x]) == 3 and x > camera.milestone * 2/3:
+                    if self.mapmatrix[y][x][2] == "G":
+                        newenemy = Goomba(self.settings, self.screen, enemy_sprites[0], x, y)
+                        enemies.add(newenemy)
+                    elif self.mapmatrix[y][x][2] == "K":
+                        newenemy = GreenKoopa(self.settings, self.screen, enemy_sprites[1], x, y)
+                        enemies.add(newenemy)
 
-    def sprite_cycler(self, camera, background, foreground, blocks, hidden_blocks, coins):
+    def sprite_cycler(self, camera, background, foreground, blocks, hidden_blocks, coins, block_contents, enemies,
+                      enemy_sprites):
         for tile in background:
             if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
                 tile.kill()
@@ -104,6 +182,13 @@ class Map:
         for entity in coins:
             if entity.rect.x <= camera.rect.x - self.settings.screen_width/2:
                 entity.kill()
+        for sprite in block_contents:
+            if isinstance(sprite, Popcoin):
+                if sprite.frame == 9:
+                    sprite.kill()
+            if isinstance(sprite, Brokebricks):
+                if sprite.left_rect1.y > self.settings.screen_height:
+                    sprite.kill()
         if int((camera.rect.right + camera.rect.width/2)/self.settings.scale["tile_width"]) > camera.milestone \
                 and camera.milestone < camera.cap:
             camera.milestone = int((camera.rect.right + camera.rect.width/2)/self.settings.scale["tile_width"])
@@ -149,3 +234,10 @@ class Map:
                     newtile = Tile(self.settings, self.screen, self.tileset[49:54:2],
                                    x, y, True,  None)
                     coins.add(newtile)
+                if len(self.mapmatrix[y][x]) == 3 and x > camera.milestone * 2/3:
+                    if self.mapmatrix[y][x][2] == "G":
+                        newenemy = Goomba(self.settings, self.screen, enemy_sprites[0], x, y)
+                        enemies.add(newenemy)
+                    elif self.mapmatrix[y][x][2] == "K":
+                        newenemy = GreenKoopa(self.settings, self.screen, enemy_sprites[1], x, y)
+                        enemies.add(newenemy)

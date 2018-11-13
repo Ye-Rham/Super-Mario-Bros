@@ -8,4 +8,4 @@ class Settings:
         self.scale.update({"tile_width": self.scale["pixel_width"] * 16,
                            "tile_height": self.scale["pixel_height"] * 16})
 
-        self.bg_color = ((107, 140, 255), (0, 0, 0))
+        self.bg_color = ((148, 148, 255), (0, 0, 0))

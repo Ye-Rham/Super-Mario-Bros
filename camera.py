@@ -10,6 +10,10 @@ class Camera:
         self.milestone = int((self.rect.right + self.rect.width/2)/self.settings.scale["tile_width"])
         # map generation goes up to this x
         self.cap = None  # end of level
+        self.global_frame = 0
+        self.flash = True
+        self.flash_count = 0
+        self.level_type = 0  # 0 for overworld, 1 for underworld
 
     def camera_tracking(self, mario):
         # Slowly catch the camera location up
@@ -28,22 +32,52 @@ class Camera:
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
 
-    def update_screen(self, screen, background, foreground, blocks, hidden_blocks, coins, mario):
-        screen.fill(self.settings.bg_color[0])
+    def update_screen(self, screen, time, background, foreground, blocks, hidden_blocks, coins, mario, block_contents,
+                      enemies):
+        screen.fill(self.settings.bg_color[self.level_type])
         self.draw_level(background, foreground, blocks, hidden_blocks, coins)
+        self.draw_active_objects(block_contents, enemies)
         mario.blitme(self.x_offset)
 
         pygame.display.flip()
 
+        self.frame_management(time, block_contents, enemies)
+
     def draw_level(self, background, foreground, blocks, hidden_blocks, coins):
         for tile in background:
-            tile.draw(self.x_offset)
+            tile.draw(self.x_offset, self.global_frame)
         for tile in foreground:
-            tile.draw(self.x_offset)
+            tile.draw(self.x_offset, self.global_frame)
         for tile in blocks:
-            tile.draw(self.x_offset)
+            tile.draw(self.x_offset, self.global_frame)
         for tile in hidden_blocks:
-            tile.draw(self.x_offset)
+            tile.draw(self.x_offset, self.global_frame)
         for tile in coins:
-            tile.draw(self.x_offset)
+            tile.draw(self.x_offset, self.global_frame)
 
+    def draw_active_objects(self, block_contents, enemies):
+        for sprite in block_contents:
+            sprite.draw(self.x_offset)
+        for enemy in enemies:
+            enemy.draw(self.x_offset)
+
+    def frame_management(self, time, block_contents, enemies):
+        for sprite in block_contents:
+            sprite.frame += 1
+        if self.flash_count < 60:
+            self.flash_count += 1
+        if time % 10 == 0 and self.flash_count == 60:
+            if self.flash:
+                self.global_frame += 1
+                if self.global_frame > 2:
+                    self.global_frame = 1
+                    self.flash = False
+            elif not self.flash:
+                self.global_frame -= 1
+                if self.global_frame < 0:
+                    self.global_frame = 0
+                    self.flash = True
+                    self.flash_count = 0
+        if time % 10 == 0:
+            for enemy in enemies:
+                enemy.update_frame()

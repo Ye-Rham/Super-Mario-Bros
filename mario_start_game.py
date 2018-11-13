@@ -6,6 +6,7 @@ from game_settings import Settings
 from sprite_sheet import SpriteSheet
 from map import Map
 from camera import Camera
+from hud import HUD
 from mario import Mario
 
 
@@ -16,8 +17,18 @@ def run_game():
     pygame.display.set_caption("Super Mario Bros")
     mario_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Mario & Luigi.png", screen)
     tile_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Tileset.png", screen)
+    item_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Items & Objects.png", screen)
+    enemy_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Enemies & Bosses.png", screen)
+    font_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Time Up Game Over Screens and Text.png", screen)
     tilesets = []
+    block_content_sprites = []
+    score_sprites = []
+    enemy_sprites = []
+    font_sprites = []
     initialize_tilesets(settings, tile_spritesheet, tilesets)
+    initialize_animated_item_sprites(settings, item_spritesheet, block_content_sprites)
+    initialize_enemy_sprites(settings, enemy_spritesheet, enemy_sprites)
+    initialize_font(settings, font_spritesheet, font_sprites)
 
     camera = Camera(settings)
     mario = Mario(settings, screen, mario_spritesheet)
@@ -26,19 +37,29 @@ def run_game():
     blocks = Group()
     hidden_blocks = Group()
     coins = Group()
+    block_contents = Group()
+    enemies = Group()
     level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
-    level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins)
+    level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites)
 
     timer = pygame.time.Clock()
+    time = 1
 
     while True:
         timer.tick(60)
+        time += 1
+        if time == 61:
+            time = 1
 
         check_events(mario)
         mario.update()
+        for enemy in enemies:
+            enemy.update()
         camera.camera_tracking(mario)
-        level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins)
-        camera.update_screen(screen, background, foreground, blocks, hidden_blocks, coins, mario)
+        level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins, block_contents,
+                                enemies, enemy_sprites)
+        camera.update_screen(screen, time, background, foreground, blocks, hidden_blocks, coins, mario, block_contents,
+                             enemies)
 
 
 def check_events(mario):
@@ -83,8 +104,43 @@ def initialize_tilesets(settings, spritesheet, tilesets):
             tileset1_rects.append((x * 16, y * 16, 16, 16))
             tileset2_rects.append((x * 16, y * 16, 16, 16))
 
-    tilesets.append(spritesheet.images_at(tileset1_rects, settings.scale["tile_width"], settings.scale["tile_height"]))
-    tilesets.append(spritesheet.images_at(tileset2_rects, settings.scale["tile_width"], settings.scale["tile_height"]))
+    tilesets.append(spritesheet.images_at(tileset1_rects, settings.scale["tile_width"], settings.scale["tile_height"],
+                    colorkey=settings.bg_color[0]))
+    tilesets.append(spritesheet.images_at(tileset2_rects, settings.scale["tile_width"], settings.scale["tile_height"],
+                                          colorkey=settings.bg_color[0]))
+
+
+def initialize_animated_item_sprites(settings, item_spritesheet, block_content_sprites):
+    coin_image_rects = ((0, 112, 16, 16), (16, 112, 16, 16), (32, 112, 16, 16), (48, 112, 16, 16))
+    brick_image_rects = ((64, 0, 8, 8), (72, 0, 8, 8), (64, 8, 8, 8), (72, 8, 8, 8))
+    block_content_sprites.append(item_spritesheet.images_at(coin_image_rects, settings.scale["tile_width"],
+                                                            settings.scale["tile_height"],
+                                                            colorkey=settings.bg_color[0]))
+    block_content_sprites.append(item_spritesheet.images_at(brick_image_rects, settings.scale["tile_width"]/4,
+                                                            settings.scale["tile_height"]/4,
+                                                            colorkey=settings.bg_color[0]))
+
+
+def initialize_enemy_sprites(settings, enemy_spritesheet, enemy_sprites):
+    goomba_image_rects = ((0, 16, 16, 16), (16, 16, 16, 16), (32, 16, 16, 16))
+    koopa_image_rects = ((96, 8, 16, 24), (112, 8, 16, 24), (160, 8, 16, 24), (176, 8, 16, 24))
+    enemy_sprites.append(enemy_spritesheet.images_at(goomba_image_rects, settings.scale["tile_width"],
+                                                     settings.scale["tile_height"], colorkey=settings.bg_color[0]))
+    enemy_sprites.append(enemy_spritesheet.images_at(koopa_image_rects, settings.scale["tile_width"],
+                                                     settings.scale["tile_height"]*3/2, colorkey=settings.bg_color[0]))
+
+
+def initialize_font(settings, font_spritesheet, font_sprites):
+    font_rects = []
+    for y in range(0, 1):
+        for x in range(0, 15):
+            font_rects.append((3 + x * 8, 460 + y * 8, 8, 8))
+    for x in range(0, 3):
+        font_rects.append((3 + x * 8, 476, 8, 8))
+    font_rects.append((67, 476, 8, 8))
+    font_rects.append((75, 476, 8, 8))
+    font_sprites.append(font_spritesheet.images_at(font_rects, settings.scale["tile_width"]/2,
+                                                   settings.scale["tile_height"]/2, colorkey=settings.bg_color[0]))
 
 
 run_game()
