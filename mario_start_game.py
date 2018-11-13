@@ -21,6 +21,8 @@ def run_game():
 
     camera = Camera(settings)
     mario = Mario(settings, screen, mario_spritesheet)
+    mario_group = Group()
+    mario_group.add(mario)
     background = Group()
     foreground = Group()
     blocks = Group()
@@ -35,7 +37,7 @@ def run_game():
         timer.tick(60)
 
         check_events(mario)
-        mario.update()
+        mario.update(mario_group, foreground, blocks)
         camera.camera_tracking(mario)
         level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins)
         camera.update_screen(screen, background, foreground, blocks, hidden_blocks, coins, mario)
