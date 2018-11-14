@@ -34,7 +34,7 @@ class Tile(Sprite):
         elif not self.block_type == 5 and self.active and self.animated:
             self.screen.blit(self.tile_sprite[global_frame], self.rect.move(x_offset, -self.y_offset))
         elif not self.block_type == 5 and self.active:
-            self.screen.blit(self.tile_sprite[0], self.rect.move(x_offset, self.y_offset))
+            self.screen.blit(self.tile_sprite[0], self.rect.move(x_offset, -self.y_offset))
         elif not self.block_type == 5 and not self.active:
             self.screen.blit(self.tile_sprite[len(self.tile_sprite) - 1], self.rect.move(x_offset, -self.y_offset))
         elif self.block_type == 5 and not self.active:
@@ -48,7 +48,8 @@ class Tile(Sprite):
             elif self.y_offset > 0:
                 self.y_offset -= self.settings.scale["pixel_height"]
                 if self.y_offset == 0 and not self.active:
-                    self.frame = len(self.tile_sprite)
+                    if not self.block_type == 5:
+                        self.frame = len(self.tile_sprite)
                     self.block_push_animation = False
                 elif self.y_offset == 0 and self.active:
                     self.fall = False
@@ -57,7 +58,7 @@ class Tile(Sprite):
             if self.time > 0:
                 self.time -= 1
 
-    def block_reaction(self, block_content_sprites, block_contents, hud):
+    def block_reaction(self, block_content_sprites, block_contents, hud, mario, game_sounds, channel1):
         # Pushes out the contents of the block
         if self.block_type == 0 and self.active:
             newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
@@ -65,18 +66,22 @@ class Tile(Sprite):
             self.block_push_animation = True
             self.active = False
             hud.score += 200
+            channel1.play(game_sounds["Coin"])
         elif self.block_type == 1 and self.active:
             self.block_push_animation = True
             # spawn_powerup()
             self.active = False
+            channel1.play(game_sounds["Item"])
         elif self.block_type == 2:
-            if True: # mario is big
+            if mario.health == 2:
                 newbrokebricks = Brokebricks(self.settings, self.screen, block_content_sprites[1], self.rect.center)
                 block_contents.add(newbrokebricks)
                 self.kill()
                 hud.score += 50
-            else:
-                self.block_push_animation()
+                channel1.play(game_sounds["Break"])
+            elif mario.health == 1:
+                self.block_push_animation = True
+                channel1.play(game_sounds["Bump"])
         elif self.block_type == 3 and self.active:
             if self.countdown:
                 newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
@@ -85,20 +90,26 @@ class Tile(Sprite):
                 if self.time == 0:
                     self.active = False
                 hud.score += 200
+                channel1.play(game_sounds["Coin"])
             else:
                 newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
                 block_contents.add(newpopcoin)
                 self.block_push_animation = True
                 self.countdown = True
                 hud.score += 200
+                channel1.play(game_sounds["Coin"])
         elif self.block_type == 4 and self.active:
             self.block_push_animation = True
             # spawn_star()
             self.active = False
+            channel1.play(game_sounds["Item"])
         elif self.block_type == 5 and self.active:
             self.block_push_animation = True
             # spawn_1up()
             self.active = False
+            channel1.play(game_sounds["Item"])
+        else:
+            channel1.play(game_sounds["Bump"])
 
     @staticmethod
     def expire_time(bricks):
@@ -260,7 +271,7 @@ class Map:
                                    False,  int(self.mapmatrix[y][x][1]) + 2)
                     blocks.add(newtile)
                 elif self.mapmatrix[y][x][0] == "H":
-                    newtile = Tile(self.settings, self.screen, self.tileset[55], x, y,
+                    newtile = Tile(self.settings, self.screen, self.tileset[54], x, y,
                                    False,  int(self.mapmatrix[y][x][1]) + 5)
                     hidden_blocks.add(newtile)
                 elif self.mapmatrix[y][x][0] == "IC":

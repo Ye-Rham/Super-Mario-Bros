@@ -34,6 +34,23 @@ def run_game():
     initialize_tilesets(settings, tile_spritesheet, tilesets)
     points_font = initialize_animated_item_sprites(settings, item_spritesheet, block_content_sprites)
     initialize_enemy_sprites(settings, enemy_spritesheet, enemy_sprites)
+    game_sounds = {"Small Jump": pygame.mixer.Sound('sounds/Jump.wav'),
+                   "Big Jump": pygame.mixer.Sound('sounds/Big Jump.wav'),
+                   "Bump": pygame.mixer.Sound('sounds/Bump.wav'),
+                   "Beep": pygame.mixer.Sound('sounds/Beep.wav'),
+                   "Break": pygame.mixer.Sound('sounds/Break.wav'),
+                   "Coin": pygame.mixer.Sound('sounds/Coin.wav'),
+                   "Item": pygame.mixer.Sound('sounds/Item.wav'),
+                   "Die": pygame.mixer.Sound('sounds/Die.wav'),
+                   "Game Over": pygame.mixer.Sound('sounds/Game Over.wav'),
+                   "Fireball": pygame.mixer.Sound('sounds/Fire Ball.wav'),
+                   "Squish": pygame.mixer.Sound('sounds/Squish.wav'),
+                   "Kick": pygame.mixer.Sound('sounds/Kick.wav'),
+                   "1UP": pygame.mixer.Sound('sounds/1up.wav'),
+                   "Skid": pygame.mixer.Sound('sounds/Skid.wav'),
+                   "Flagpole": pygame.mixer.Sound('sounds/Flagpole.wav'),
+                   "Warppipe": pygame.mixer.Sound('sounds/Warp.wav')}
+    channel1 = pygame.mixer.Channel(1)
 
     camera = Camera(settings)
     hud = HUD(settings, screen, item_spritesheet, font)
@@ -66,9 +83,9 @@ def run_game():
         if time == 61:
             time = 1
 
-        check_events(mario, startmenu, mario_jump)
-        mario.update(mario_group, foreground, blocks, enemies, points, hud, font, block_contents,
-               block_content_sprites, camera)
+        check_events(mario, startmenu, game_sounds, channel1)
+        mario.update(mario_group, foreground, blocks, hidden_blocks, enemies, points, hud, font, block_contents,
+                     block_content_sprites, camera, game_sounds, channel1)
         for enemy in enemies:
             enemy.update()
         camera.camera_tracking(mario)
@@ -82,22 +99,22 @@ def run_game():
                               points)
                 level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
                                          enemy_sprites, mario)
-                pygame.mixer.music.play()
                 camera.lives_screen = True
                 camera.global_frame = 0
                 camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
                                      mario, block_contents, enemies, flagpole, points, flag)
                 hud.countdown = 400
+                pygame.mixer.music.play()
                 while not camera.lives_screen and startmenu.playgame_select:
                     timer.tick(60)
                     time += 1
                     if time == 61:
                         time = 1
-                    check_events(mario, startmenu, mario_jump)
+                    check_events(mario, startmenu, game_sounds, channel1)
                     if time % 60 == 0:
                         hud.countdown -= 1
-                    mario.update(mario_group, foreground, blocks, enemies, points, hud, points_font, block_contents,
-                                 block_content_sprites, camera)
+                    mario.update(mario_group, foreground, blocks, hidden_blocks, enemies, points, hud, points_font,
+                                 block_contents, block_content_sprites, camera, game_sounds, channel1)
                     for enemy in enemies:
                         enemy.update()
                     camera.camera_tracking(mario)
@@ -110,12 +127,13 @@ def run_game():
                           points)
             level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
                                      enemy_sprites, mario)
+            channel1.play(game_sounds["Game Over"])
             camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
                                  mario, block_contents, enemies, flagpole, points, flag)
             hud.reset()
 
 
-def check_events(mario, startmenu, mario_jump):
+def check_events(mario, startmenu, game_sounds, channel1):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
@@ -131,8 +149,7 @@ def check_events(mario, startmenu, mario_jump):
                     mario.left_key_down = True
             if event.key == pygame.K_SPACE:
                 if startmenu.playgame_select:
-                    mario.jump()
-                    mario_jump.play()
+                    mario.jump(game_sounds, channel1)
                 elif not startmenu.selection:
                     if not startmenu.highscore_select:
                         startmenu.highscore_select = True
@@ -142,12 +159,14 @@ def check_events(mario, startmenu, mario_jump):
                     startmenu.playgame_select = True
             if event.key == pygame.K_UP and not startmenu.selection and not startmenu.highscore_select:
                 startmenu.selection = True
+                channel1.play(game_sounds["Beep"])
             if event.key == pygame.K_DOWN:
                 if startmenu.playgame_select:
                     # mario crouch
                     placeholder = "placeholder"
                 elif startmenu.selection:
                     startmenu.selection = False
+                    channel1.play(game_sounds["Beep"])
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT:

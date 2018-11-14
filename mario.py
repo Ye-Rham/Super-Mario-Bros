@@ -141,8 +141,8 @@ class Mario(Sprite):
         if collisions:
             return True
 
-    def update(self, mario_group, foreground, blocks, enemies, points, hud, font, block_contents,
-               block_content_sprites, camera):
+    def update(self, mario_group, foreground, blocks, hidden_blocks, enemies, points, hud, font, block_contents,
+               block_content_sprites, camera, game_sounds, channel1):
         self.update_velocity()
 
         self.step_tracker += 1
@@ -270,6 +270,7 @@ class Mario(Sprite):
 
         collisions1 = pygame.sprite.spritecollide(self, enemies, False)
         collisions2 = pygame.sprite.spritecollide(self, blocks, False)
+        collisions3 = pygame.sprite.spritecollide(self, hidden_blocks, False)
         for enemy in collisions1:
             if self.jump_active and self.y_velocity < 0 and enemy.alive:
                 if isinstance(enemy, Goomba):
@@ -284,7 +285,11 @@ class Mario(Sprite):
                     points.add(newpoints)
                     if self.jump_counter < 10:
                         self.jump_counter += 1
-                    self.y_velocity = 10
+                    self.y_velocity = 5
+                    self.delta_t = 1
+                    channel1.play(game_sounds["Squish"])
+                    if self.jump_counter == 11:
+                        channel1.play(game_sounds["1UP"])
                 elif isinstance(enemy, GreenKoopa):
                     if not enemy.tuck:
                         enemy.tuck = True
@@ -297,27 +302,48 @@ class Mario(Sprite):
                         points.add(newpoints)
                         if self.jump_counter < 10:
                             self.jump_counter += 1
-                        self.y_velocity = 10
+                        self.y_velocity = 5
+                        self.delta_t = 1
+                        self.rect.bottom = enemy.rect.top
+                        channel1.play(game_sounds["Squish"])
+                        if self.jump_counter == 10:
+                            channel1.play(game_sounds["1UP"])
                     elif enemy.tuck and not enemy.kicked:
                         enemy.kicked = True
+                        enemy.tuck_timer = 0
                         if self.last_moved_direction == 'left':
                             enemy.direction = False
+                            enemy.rect.right = self.rect.left
                         elif self.last_moved_direction == 'right':
                             enemy.direction = True
+                            enemy.rect.left = self.rect.right
+                        channel1.play(game_sounds["Kick"])
                     elif enemy.tuck and enemy.kicked:
                         enemy.kicked = False
                         hud.score += self.point_values[self.jump_counter]
-                        if self.jump_counter == 11:
+                        if self.jump_counter == 10:
                             hud.lives += 1
                         newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
                                                  self.point_values[self.jump_counter])
                         points.add(newpoints)
                         if self.jump_counter < 10:
                             self.jump_counter += 1
-                        self.y_velocity = 10
+                        self.y_velocity = 5
+                        self.delta_t = 1
+                        self.rect.bottom = enemy.rect.top
+                        channel1.play(game_sounds["Squish"])
+                        if self.jump_counter == 10:
+                            channel1.play(game_sounds["1UP"])
         for block in collisions2:
             if self.y_velocity > 0 and self.jump_active:
-                block.block_reaction(block_content_sprites, block_contents, hud)
+                block.block_reaction(block_content_sprites, block_contents, hud, self, game_sounds, channel1)
+                self.rect.y = block.rect.bottom
+                self.y_velocity = 0
+        for hidden_block in collisions3:
+            if self.y_velocity > 0 and self.jump_active:
+                hidden_block.block_reaction(block_content_sprites, block_contents, hud, self, game_sounds, channel1)
+                self.rect.y = hidden_block.rect.bottom
+                self.y_velocity = 0
 
         if self.rect.x < camera.rect.x:
             self.rect.x = camera.rect.x
@@ -344,8 +370,12 @@ class Mario(Sprite):
         self.direction = new_direction
         self.step_tracker = 0
 
-    def jump(self):
+    def jump(self, game_sounds, channel1):
         if not self.jump_active:
+            if self.health == 1:
+                channel1.play(game_sounds["Small Jump"])
+            elif self.health == 2:
+                channel1.play(game_sounds["Big Jump"])
             self.jump_active = True
             self.y_velocity = 20
 

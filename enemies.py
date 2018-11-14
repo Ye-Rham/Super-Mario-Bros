@@ -63,7 +63,7 @@ class GreenKoopa(Sprite):
 
         self.frame = 0
         self.x_velocity = self.settings.scale["pixel_width"]/3
-        self.x_velocity_kick = self.settings.scale["pixel_width"]*3
+        self.x_velocity_kick = self.settings.scale["pixel_width"]*4
         self.y_velocity = 0
         self.direction = False
         self.fall = False
@@ -73,7 +73,7 @@ class GreenKoopa(Sprite):
         self.kicked = False
 
     def update(self):
-        if not self.direction and self.alive:
+        if not self.direction and self.alive and not self.tuck:
             if not self.tuck:
                 self.rect.x -= self.x_velocity
             elif self.kicked:
@@ -82,11 +82,11 @@ class GreenKoopa(Sprite):
             self.rect.x += self.x_velocity
         elif self.kicked:
             self.rect.x += self.x_velocity_kick
-        elif self.tuck:
+        elif self.tuck and not self.kicked:
             self.tuck_timer += 1
-            if self.tuck_timer == 3600:
+            if self.tuck_timer == 600:
                 self.tuck = False
-                self.tuck_timer = False
+                self.tuck_timer = 0
                 self.frame = 0
                 self.direction = False
         if self.fall or not self.alive:
@@ -100,10 +100,10 @@ class GreenKoopa(Sprite):
                 self.frame = 1
             else:
                 self.frame = 0
-        elif self.tuck and self.tuck_timer > 1800:
-            if self.tuck_timer % 10 == 0 and self.tuck_timer % 20 != 0:
+        elif self.tuck and self.tuck_timer > 480:
+            if self.frame == 2:
                 self.frame = 3
-            elif self.tuck_timer % 20 == 0 and self.tuck_timer != 3600:
+            elif self.frame == 3:
                 self.frame = 2
 
     def draw(self, x_offset):
