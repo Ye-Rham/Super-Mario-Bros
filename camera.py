@@ -34,6 +34,10 @@ class Camera:
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
 
+    def set_camera_at_mario(self, mario):
+        self.rect.x = mario.rect.x
+        self.rect.y = 0
+
     def update_screen(self, screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins, mario,
                       block_contents, enemies, flagpole):
         if not self.lives_screen:

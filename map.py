@@ -111,7 +111,14 @@ class Map:
         camera.cap = len(self.mapmatrix[0]) - 1
 
     def initialize_map(self, camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites,
-                       mario):
+                       mario, overwrite):
+        background.empty()
+        foreground.empty()
+        blocks.empty()
+        hidden_blocks.empty()
+        coins.empty()
+        enemies.empty()
+
         x_length = camera.milestone + 1
         if x_length > camera.cap:
             x_length = camera.cap
@@ -165,7 +172,7 @@ class Map:
                     elif self.mapmatrix[y][x - 8][2] == "K":
                         newenemy = GreenKoopa(self.settings, self.screen, enemy_sprites[1], x, y)
                         enemies.add(newenemy)
-                    elif self.mapmatrix[y][x - 8][2] == "M":
+                    elif self.mapmatrix[y][x - 8][2] == "M" and not overwrite:
                         mario.rect.x = self.settings.scale["tile_width"] * (x - 8) + \
                                        self.settings.scale["tile_width"] / 2
                         mario.rect.y = self.settings.scale["tile_height"] * y + self.settings.scale["tile_width"] / 2

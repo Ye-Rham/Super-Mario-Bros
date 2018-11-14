@@ -16,6 +16,7 @@ def run_game():
     pygame.mixer.init()
     pygame.mixer.music.load('sounds/01-main-theme-overworld.mp3')
     mario_jump = pygame.mixer.Sound('sounds/Jump.wav')
+    warp = pygame.mixer.Sound('sounds/Warp.wav')
 
     settings = Settings()
     screen = pygame.display.set_mode((settings.screen_width, settings.screen_height))
@@ -28,7 +29,6 @@ def run_game():
     title_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Title Screen.png", screen)
     tilesets = []
     block_content_sprites = []
-    score_sprites = []
     enemy_sprites = []
     font = initialize_font(settings, font_spritesheet)
     initialize_tilesets(settings, tile_spritesheet, tilesets)
@@ -38,7 +38,7 @@ def run_game():
     camera = Camera(settings)
     hud = HUD(settings, screen, item_spritesheet, font)
     startmenu = StartMenu(settings, screen, title_spritesheet, font)
-    mario = Mario(settings, screen, mario_spritesheet)
+    mario = Mario(settings, screen, mario_spritesheet, warp)
     mario_group = Group()
     mario_group.add(mario)
     background = Group()
@@ -49,9 +49,12 @@ def run_game():
     block_contents = Group()
     flagpole = Group()
     enemies = Group()
+
+    switched = False
+
     level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
     level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites,
-                             mario)
+                             mario, False)
 
     timer = pygame.time.Clock()
     time = 1
@@ -64,23 +67,29 @@ def run_game():
 
         check_events(mario, startmenu, mario_jump)
         mario.update(mario_group, foreground, blocks)
+
         for enemy in enemies:
             enemy.update()
         camera.camera_tracking(mario)
-        level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins, block_contents,
+        if settings.current_level == "overworld":
+            level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins, block_contents,
                                 enemies, enemy_sprites, flagpole)
+
         camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins, mario,
                              block_contents, enemies, flagpole)
         if startmenu.playgame_select:
             while startmenu.playgame_select:
+
                 pygame.mixer.music.play()
                 camera.lives_screen = True
                 camera.global_frame = 0
                 camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
                                      mario, block_contents, enemies, flagpole)
                 reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole)
-                level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
-                                         enemy_sprites, mario)
+
+                if settings.current_level == "overworld":
+                    level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
+                                         enemy_sprites, mario, False)
                 hud.countdown = 400
                 while not camera.lives_screen:
                     timer.tick(60)
@@ -91,11 +100,43 @@ def run_game():
                     if time % 60 == 0:
                         hud.countdown -= 1
                     mario.update(mario_group, foreground, blocks)
+
                     for enemy in enemies:
                         enemy.update()
                     camera.camera_tracking(mario)
-                    level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins,
-                                            block_contents, enemies, enemy_sprites, flagpole)
+                    if settings.current_level == "overworld":
+                        if switched is True:
+                            if first:
+                                mario.jump_active = True
+                                mario.rect.x = 7947
+                                mario.rect.y = 450
+                                mario.floor = mario.rect.y
+                                first = False
+                            #mario.forced = True
+                            camera.rect.x = mario.rect.x - 200
+                            level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
+                            level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins,
+                                                     enemies, enemy_sprites, mario, True)
+
+                        level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins,
+                                                block_contents, enemies, enemy_sprites, flagpole)
+
+                    elif settings.current_level == "underworld":
+                        if not switched:
+                            camera = Camera(settings)
+                            mario.rect.x = 80
+                            mario.rect.y = 100
+                            level_1_1 = Map(settings, screen, "level_maps/1-1 Underworld.txt", tilesets[0], camera)
+                            level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins,
+                                                    block_contents, enemies, enemy_sprites, flagpole)
+                            level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
+                                                     enemy_sprites,
+                                                     mario, False)
+                            switched = True
+                            first = True
+                        level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins,
+                                                block_contents, enemies, enemy_sprites, flagpole)
+
                     camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks,
                                          coins, mario, block_contents, enemies, flagpole)
 
@@ -105,6 +146,8 @@ def check_events(mario, startmenu, mario_jump):
         if event.type == pygame.QUIT:
             sys.exit()
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_DOWN:
+                mario.check_underworld()
             if event.key == pygame.K_RIGHT:
                 if startmenu.playgame_select:
                     mario.change_sprite_image_direction('right')
@@ -140,13 +183,10 @@ def check_events(mario, startmenu, mario_jump):
                 if startmenu.playgame_select:
                     mario.change_sprite_image_direction('still')
                     mario.right_key_down = False
-                    #mario.moving_right = False
             if event.key == pygame.K_LEFT:
                 if startmenu.playgame_select:
                     mario.change_sprite_image_direction('still')
                     mario.left_key_down = False
-                    #mario.moving_left = False
-
 
 def initialize_tilesets(settings, spritesheet, tilesets):
     tileset1_rects = []

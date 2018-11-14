@@ -9,3 +9,5 @@ class Settings:
                            "tile_height": self.scale["pixel_height"] * 16})
 
         self.bg_color = ((148, 148, 255), (0, 0, 0))
+
+        self.current_level = "overworld"
