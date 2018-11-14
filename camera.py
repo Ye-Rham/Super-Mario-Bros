@@ -1,4 +1,5 @@
 import pygame
+from time import sleep
 
 
 class Camera:
@@ -14,6 +15,7 @@ class Camera:
         self.flash = True
         self.flash_count = 0
         self.level_type = 0  # 0 for overworld, 1 for underworld
+        self.lives_screen = False
 
     def camera_tracking(self, mario):
         # Slowly catch the camera location up
@@ -32,18 +34,29 @@ class Camera:
                 self.rect.x = self.cap
             self.x_offset = -self.rect.x
 
-    def update_screen(self, screen, time, background, foreground, blocks, hidden_blocks, coins, mario, block_contents,
-                      enemies):
-        screen.fill(self.settings.bg_color[self.level_type])
-        self.draw_level(background, foreground, blocks, hidden_blocks, coins)
-        self.draw_active_objects(block_contents, enemies)
-        mario.blitme(self.x_offset)
+    def update_screen(self, screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins, mario,
+                      block_contents, enemies, flagpole):
+        if not self.lives_screen:
+            screen.fill(self.settings.bg_color[self.level_type])
+            self.draw_level(background, foreground, blocks, hidden_blocks, coins, flagpole)
+            self.draw_active_objects(block_contents, enemies)
+            mario.blitme(self.x_offset)
+            if not startmenu.playgame_select:
+                startmenu.draw(self.x_offset)
+            hud.draw(self.level_type, self.global_frame)
 
-        pygame.display.flip()
+            pygame.display.flip()
+        else:
+            screen.fill(self.settings.bg_color[1])
+            hud.draw(self.level_type, self.global_frame)
+            hud.draw_lives_screen(mario)
+            pygame.display.flip()
+            sleep(3)
+            self.lives_screen = False
 
         self.frame_management(time, block_contents, enemies)
 
-    def draw_level(self, background, foreground, blocks, hidden_blocks, coins):
+    def draw_level(self, background, foreground, blocks, hidden_blocks, coins, flagpole):
         for tile in background:
             tile.draw(self.x_offset, self.global_frame)
         for tile in foreground:
@@ -53,6 +66,8 @@ class Camera:
         for tile in hidden_blocks:
             tile.draw(self.x_offset, self.global_frame)
         for tile in coins:
+            tile.draw(self.x_offset, self.global_frame)
+        for tile in flagpole:
             tile.draw(self.x_offset, self.global_frame)
 
     def draw_active_objects(self, block_contents, enemies):

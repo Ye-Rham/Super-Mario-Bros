@@ -110,7 +110,8 @@ class Map:
 
         camera.cap = len(self.mapmatrix[0]) - 1
 
-    def initialize_map(self, camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites):
+    def initialize_map(self, camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites,
+                       mario):
         x_length = camera.milestone + 1
         if x_length > camera.cap:
             x_length = camera.cap
@@ -157,16 +158,20 @@ class Map:
                     newtile = Tile(self.settings, self.screen, self.tileset[49:54:2],
                                    x, y, True,  None)
                     coins.add(newtile)
-                if len(self.mapmatrix[y][x]) == 3 and x > camera.milestone * 2/3:
-                    if self.mapmatrix[y][x][2] == "G":
+                if len(self.mapmatrix[y][x - 8]) == 3:
+                    if self.mapmatrix[y][x - 8][2] == "G":
                         newenemy = Goomba(self.settings, self.screen, enemy_sprites[0], x, y)
                         enemies.add(newenemy)
-                    elif self.mapmatrix[y][x][2] == "K":
+                    elif self.mapmatrix[y][x - 8][2] == "K":
                         newenemy = GreenKoopa(self.settings, self.screen, enemy_sprites[1], x, y)
                         enemies.add(newenemy)
+                    elif self.mapmatrix[y][x - 8][2] == "M":
+                        mario.rect.x = self.settings.scale["tile_width"] * (x - 8) + \
+                                       self.settings.scale["tile_width"] / 2
+                        mario.rect.y = self.settings.scale["tile_height"] * y + self.settings.scale["tile_width"] / 2
 
     def sprite_cycler(self, camera, background, foreground, blocks, hidden_blocks, coins, block_contents, enemies,
-                      enemy_sprites):
+                      enemy_sprites, flagpole):
         for tile in background:
             if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
                 tile.kill()
@@ -234,10 +239,14 @@ class Map:
                     newtile = Tile(self.settings, self.screen, self.tileset[49:54:2],
                                    x, y, True,  None)
                     coins.add(newtile)
-                if len(self.mapmatrix[y][x]) == 3 and x > camera.milestone * 2/3:
-                    if self.mapmatrix[y][x][2] == "G":
-                        newenemy = Goomba(self.settings, self.screen, enemy_sprites[0], x, y)
+                elif self.mapmatrix[y][x][0] == "E":
+                    newtile = Tile(self.settings, self.screen, self.tileset[88 + int(self.mapmatrix[y][x][1])],
+                                   x, y, False, None)
+                    flagpole.add(newtile)
+                if len(self.mapmatrix[y][x - 8]) == 3:
+                    if self.mapmatrix[y][x - 8][2] == "G":
+                        newenemy = Goomba(self.settings, self.screen, enemy_sprites[0], x-8, y)
                         enemies.add(newenemy)
-                    elif self.mapmatrix[y][x][2] == "K":
-                        newenemy = GreenKoopa(self.settings, self.screen, enemy_sprites[1], x, y)
+                    elif self.mapmatrix[y][x - 8][2] == "K":
+                        newenemy = GreenKoopa(self.settings, self.screen, enemy_sprites[1], x-8, y)
                         enemies.add(newenemy)

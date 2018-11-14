@@ -1,4 +1,5 @@
 import pygame
+import math
 from pygame.sprite import Sprite
 
 
@@ -35,7 +36,7 @@ class Mario(Sprite):
         # Mutex used to prevent jumping while already in the air
         self.jump_active = False
         self.y_velocity = 0
-        self.gravity = 2
+        self.gravity = 1.1
         self.delta_t = 0
 
         # Movement (internal float, round to int when needed)
@@ -49,6 +50,11 @@ class Mario(Sprite):
         # What keys are currently down
         self.right_key_down = False
         self.left_key_down = False
+
+        # Default block values
+        self.block_x = 0
+        self.block_width = 10000
+        self.colliding = False
 
 
     def calculate_changed_velocity(self):
@@ -105,12 +111,23 @@ class Mario(Sprite):
                 start_x + i * x_offset, start_y + i * y_offset, width, height),
                 scale_width, scale_height, self.transparent_color))
 
-    def update(self):
+    def isColliding(self, mario_group, blocks):
+        collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
+        if collisions:
+            return True
+
+    def update(self, mario_group, foreground, blocks):
         self.update_velocity()
 
-
         self.step_tracker += 1
-        self.rect.x += self.x_velocity
+        if abs(self.x_velocity) > 1:
+            self.rect.x += self.x_velocity
+        # Collision Checking
+        if self.isColliding(mario_group, foreground) or self.isColliding(mario_group, blocks):
+            # Difference between floor and ceiling
+
+            self.rect.x += self.x_velocity * -1 * 2
+            self.x_velocity = 0
 
         if self.step_tracker > 30:
             self.step_tracker = 1
@@ -138,19 +155,58 @@ class Mario(Sprite):
                     self.image = self.image_list[self.walking_index]
 
         if self.jump_active:
-            self.delta_t += 1 # where this is time
+            self.delta_t += 1  # where this is time
             self.y_velocity -= self.gravity * self.delta_t / 10
             self.image = self.image_list[5]
+            self.floor = 550
             if self.direction == 'left' or self.last_moved_direction == 'left':
                 self.image = pygame.transform.flip(self.image, True, False)
 
-        self.rect.y -= self.y_velocity
+        self.rect.y -= math.floor(self.y_velocity)
+
+        self.colliding = False
+        if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
+            # check if colliding with bottom or top of block
+            collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
+            if collisions:
+                self.colliding = True
+                for collides in collisions.values():
+                    for collide in collides:
+                        difference_one = abs(self.rect.top - collide.rect.bottom)
+                        difference_two = abs(self.rect.bottom - collide.rect.top)
+                        potential_floor = collide.rect.top - 96
+                        self.block_width = collide.rect.right - collide.rect.left
+                        self.block_x = collide.rect.x
+
+            collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
+            if collisions:
+                self.colliding = True
+                for collides in collisions.values():
+                    for collide in collides:
+                        difference_one = abs(self.rect.top - collide.rect.bottom)
+                        difference_two = abs(self.rect.bottom - collide.rect.top)
+                        potential_floor = collide.rect.top - 96
+                        self.block_width = collide.rect.right - collide.rect.left
+                        self.block_x = collide.rect.x
+
+            # collided with bottom
+            if difference_one < difference_two:
+                self.rect.y += math.floor(self.y_velocity)
+                self.delta_t += 40
+            else:  # collided with top
+                self.floor = potential_floor
 
         if self.rect.y >= self.floor:  # player hits the ground
             self.jump_active = False
             self.y_velocity = 0
             self.delta_t = 0
             self.rect.y = self.floor
+
+        # Only kicks in if above the natural floor
+        if (self.rect.x > (self.block_x + (self.block_width / 2)) or
+           self.rect.x < (self.block_x - (self.block_width / 2))) and self.rect.y < 550 and self.colliding is False:
+
+            self.jump_active = True
 
     def change_sprite_image_direction(self, new_direction):
         self.last_moved_direction = self.direction
