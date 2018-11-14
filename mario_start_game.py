@@ -124,6 +124,7 @@ def run_game():
 
                     for enemy in enemies:
                         enemy.update()
+
                     camera.camera_tracking(mario)
                     if settings.current_level == "overworld":
                         if switched is True:
@@ -143,10 +144,8 @@ def run_game():
                             camera = Camera(settings)
                             mario.rect.x = 80
                             mario.rect.y = 100
-                            level_1_1 = Map(settings, screen, "level_maps/1-1 Underworld.txt", tilesets[0], camera)
-                            level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins,
-                                            block_contents, enemies, enemy_sprites, flagpole, flag, points,
-                                            points_font)
+                            level_1_1 = Map(settings, screen, "level_maps/1-1 Underworld.txt", tilesets[1], camera)
+
                             level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
                                                      enemy_sprites,
                                                      mario, False)
