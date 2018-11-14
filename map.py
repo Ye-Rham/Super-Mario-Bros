@@ -193,7 +193,7 @@ class Map:
                     elif self.mapmatrix[y][x - 8][2] == "M":
                         mario.rect.x = self.settings.scale["tile_width"] * (x - 8) + \
                                        self.settings.scale["tile_width"] / 2
-                        mario.rect.y = self.settings.scale["tile_height"] * y + self.settings.scale["tile_width"] / 2
+                        mario.rect.y = self.settings.scale["tile_height"] * y + self.settings.scale["tile_width"] * 1.5
 
     def sprite_cycler(self, camera, background, foreground, blocks, hidden_blocks, coins, block_contents, enemies,
                       enemy_sprites, flagpole, flag, points, points_font):

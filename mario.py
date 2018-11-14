@@ -14,18 +14,33 @@ class Mario(Sprite):
         self.settings = settings
         self.screen = screen
 
+        # 0 -> dead, 1 -> small mario, 2 -> big mario
+        self.health = 1
+
         # Sprite Sizes: Big - 16x32, Small - 16x16
         self.sprite_sheet = sprite_sheet
         self.transparent_color = (146, 39, 143)
-        self.image_list = []
-        self.load_image_list(self.image_list, 80, 0, 17, 0, 16, 32, self.settings.scale["tile_width"],
+        self.image_list_big = []
+        self.image_list_small = []
+        self.load_image_list(self.image_list_big, 80, 0, 17, 0, 16, 32, self.settings.scale["tile_width"],
                              self.settings.scale["tile_height"] * 2, 21)
-        self.image = self.image_list[0]
+        self.load_image_list(self.image_list_small, 80, 33, 17, 0, 16, 16, self.settings.scale["tile_width"],
+                             self.settings.scale["tile_height"], 14)
+
+        self.image = self.image_list_small[0]
+        print(self.image.get_rect().bottom)
+        print(self.image.get_rect().top)
 
         self.rect = self.image.get_rect()
         self.rect.x = 300
-        self.rect.y = 550
-        self.floor = 550
+        self.rect.y = 552
+        self.small_difference = 45
+
+        if self.health == 1:
+            self.rect.y += self.small_difference
+
+        self.floor = 1000
+        self.natural_floor = 1000
 
         self.direction = 'still'
         self.moving_right = False
@@ -38,9 +53,9 @@ class Mario(Sprite):
         self.update_after_frames = 5
 
         # Mutex used to prevent jumping while already in the air
-        self.jump_active = False
+        self.jump_active = True
         self.y_velocity = 0
-        self.gravity = 1.1
+        self.gravity = 1.2
         self.delta_t = 0
 
         # Movement (internal float, round to int when needed)
@@ -50,6 +65,7 @@ class Mario(Sprite):
         self.walking_acceleration = 0.110 * self.physics_multiplyer
         self.walking_deceleration = -0.110 * self.physics_multiplyer
         self.x_velocity = 0
+        self.max_y_velocity = 15
 
         # What keys are currently down
         self.right_key_down = False
@@ -58,6 +74,7 @@ class Mario(Sprite):
         # Default block values
         self.block_x = 0
         self.block_width = 10000
+        self.block_height = 10000
         self.colliding = False
 
         # Points related values
@@ -142,14 +159,20 @@ class Mario(Sprite):
             self.step_tracker = 1
 
         if self.x_velocity < 0.1 and self.x_velocity > -0.1:
-            self.image = self.image_list[0]
+            if self.health == 1:
+                self.image = self.image_list_small[0]
+            elif self.health == 2:
+                self.image = self.image_list_big[0]
 
             if self.last_moved_direction == 'left':
                 self.image = pygame.transform.flip(self.image, True, False)
 
         else:
             if self.step_tracker == 1:
-                self.image = self.image_list[self.walking_index]
+                if self.health == 1:
+                    self.image = self.image_list_small[self.walking_index]
+                elif self.health == 2:
+                    self.image = self.image_list_big[self.walking_index]
                 if self.x_velocity < 0 or self.left_key_down is True:
                     self.image = pygame.transform.flip(self.image, True, False)
 
@@ -157,17 +180,28 @@ class Mario(Sprite):
                 self.walking_index += 1
                 if self.walking_index > 3:
                     self.walking_index = 1
-                self.image = self.image_list[self.walking_index]
+                if self.health == 1:
+                    self.image = self.image_list_small[self.walking_index]
+                elif self.health == 2:
+                    self.image = self.image_list_big[self.walking_index]
                 if self.x_velocity < 0 or self.left_key_down is True:
                     self.image = pygame.transform.flip(self.image, True, False)
                 if self.x_velocity < 0 and self.left_key_down is False and self.right_key_down is True:
-                    self.image = self.image_list[self.walking_index]
+                    if self.health == 1:
+                        self.image = self.image_list_small[self.walking_index]
+                    elif self.health == 2:
+                        self.image = self.image_list_big[self.walking_index]
 
         if self.jump_active:
             self.delta_t += 1  # where this is time
-            self.y_velocity -= self.gravity * self.delta_t / 10
-            self.image = self.image_list[5]
-            self.floor = 550
+            self.y_velocity -= self.gravity * self.delta_t / 20
+            if self.y_velocity > self.max_y_velocity:
+                self.y_velocity = self.max_y_velocity
+            if self.health == 1:
+                self.image = self.image_list_small[5]
+            elif self.health == 2:
+                self.image = self.image_list_big[5]
+            self.floor = self.natural_floor
             if self.direction == 'left' or self.last_moved_direction == 'left':
                 self.image = pygame.transform.flip(self.image, True, False)
 
@@ -185,10 +219,13 @@ class Mario(Sprite):
                         difference_two = abs(self.rect.bottom - collide.rect.top)
                         potential_floor = collide.rect.top - 96
                         self.block_width = collide.rect.right - collide.rect.left
+                        self.block_height = collide.rect.top - collide.rect.bottom
                         self.block_x = collide.rect.x
 
             collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
             if collisions:
+                print("Collided!")
+                print(self.rect.y)
                 self.colliding = True
                 for collides in collisions.values():
                     for collide in collides:
@@ -196,6 +233,7 @@ class Mario(Sprite):
                         difference_two = abs(self.rect.bottom - collide.rect.top)
                         potential_floor = collide.rect.top - 96
                         self.block_width = collide.rect.right - collide.rect.left
+                        self.block_height = collide.rect.top - collide.rect.bottom
                         self.block_x = collide.rect.x
 
             # collided with bottom
@@ -210,12 +248,25 @@ class Mario(Sprite):
             self.delta_t = 0
             self.rect.y = self.floor
             self.jump_counter = 0
+            if self.health == 1:
+                self.rect.y += self.small_difference
 
         # Only kicks in if above the natural floor
-        if (self.rect.x > (self.block_x + (self.block_width / 2)) or
-           self.rect.x < (self.block_x - (self.block_width / 2))) and self.rect.y < 550 and self.colliding is False:
+        if (self.rect.x > (self.block_x + (self.block_width)) + 5 or
+           self.rect.x < (self.block_x - (self.block_width)) - 5) and self.rect.y < self.natural_floor and self.colliding is False:
+            # If future you is colliding, skip
 
-            self.jump_active = True
+            self.rect.y += 76
+            mario_group.add(self)
+            #self.rect.x += self.block_width / 2
+            if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
+                self.future_collide(mario_group, blocks, foreground)
+            else:
+                self.jump_active = True
+                print("Falling!")
+
+            self.rect.y -= 76
+            #self.rect.x -= self.block_width / 2
 
         collisions1 = pygame.sprite.spritecollide(self, enemies, False)
         collisions2 = pygame.sprite.spritecollide(self, blocks, False)
@@ -267,11 +318,26 @@ class Mario(Sprite):
         for block in collisions2:
             if self.y_velocity > 0 and self.jump_active:
                 block.block_reaction(block_content_sprites, block_contents, hud)
-                self.rect.y = block.rect.bottom + 1
 
         if self.rect.x < camera.rect.x:
             self.rect.x = camera.rect.x
             self.x_velocity = 0
+
+    def future_collide(self, mario_group, blocks, foreground):
+        collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
+        if collisions:
+            self.colliding = True
+            for collides in collisions.values():
+                for collide in collides:
+                    self.floor = collide.rect.top - 96
+
+        collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
+        if collisions:
+            self.colliding = True
+            for collides in collisions.values():
+                for collide in collides:
+                    self.floor = collide.rect.top - 96
+
 
     def change_sprite_image_direction(self, new_direction):
         self.last_moved_direction = self.direction

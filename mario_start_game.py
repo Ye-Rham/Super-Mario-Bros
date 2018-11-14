@@ -14,6 +14,10 @@ from mario import Mario
 
 def run_game():
     pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load('sounds/01-main-theme-overworld.mp3')
+    mario_jump = pygame.mixer.Sound('sounds/Jump.wav')
+
     settings = Settings()
     screen = pygame.display.set_mode((settings.screen_width, settings.screen_height))
     pygame.display.set_caption("Super Mario Bros")
@@ -62,9 +66,9 @@ def run_game():
         if time == 61:
             time = 1
 
-        check_events(mario, startmenu)
-        mario.update(mario_group, foreground, blocks, enemies, points, hud, points_font, block_contents,
-                     block_content_sprites, camera)
+        check_events(mario, startmenu, mario_jump)
+        mario.update(mario_group, foreground, blocks, enemies, points, hud, font, block_contents,
+               block_content_sprites, camera)
         for enemy in enemies:
             enemy.update()
         camera.camera_tracking(mario)
@@ -78,6 +82,7 @@ def run_game():
                               points)
                 level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
                                          enemy_sprites, mario)
+                pygame.mixer.music.play()
                 camera.lives_screen = True
                 camera.global_frame = 0
                 camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
@@ -88,7 +93,7 @@ def run_game():
                     time += 1
                     if time == 61:
                         time = 1
-                    check_events(mario, startmenu)
+                    check_events(mario, startmenu, mario_jump)
                     if time % 60 == 0:
                         hud.countdown -= 1
                     mario.update(mario_group, foreground, blocks, enemies, points, hud, points_font, block_contents,
@@ -110,7 +115,7 @@ def run_game():
             hud.reset()
 
 
-def check_events(mario, startmenu):
+def check_events(mario, startmenu, mario_jump):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
@@ -127,6 +132,7 @@ def check_events(mario, startmenu):
             if event.key == pygame.K_SPACE:
                 if startmenu.playgame_select:
                     mario.jump()
+                    mario_jump.play()
                 elif not startmenu.selection:
                     if not startmenu.highscore_select:
                         startmenu.highscore_select = True
