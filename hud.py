@@ -100,10 +100,10 @@ class HUD(Sprite):
                 self.screen.blit(self.font[self.level[x]], self.rect.move(self.settings.scale["pixel_width"] *
                                                                           (112 + 8 * x),
                                                                           self.settings.scale["pixel_height"] * 80))
-            rect = mario.image_list[0].get_rect()
+            rect = mario.image_list_small[0].get_rect()
             rect.x = self.rect.x + self.settings.scale["pixel_width"] * 72
             rect.y = self.rect.y + self.settings.scale["pixel_height"] * 88
-            self.screen.blit(mario.image_list[0], rect)
+            self.screen.blit(mario.image_list_small[0], rect)
             self.screen.blit(self.font["x"], self.rect.move(self.settings.scale["pixel_width"] * 96,
                                                             self.settings.scale["pixel_height"] * 112))
             for x in range(0, 2):

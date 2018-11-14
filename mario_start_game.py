@@ -13,6 +13,10 @@ from mario import Mario
 
 def run_game():
     pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load('sounds/01-main-theme-overworld.mp3')
+    mario_jump = pygame.mixer.Sound('sounds/Jump.wav')
+
     settings = Settings()
     screen = pygame.display.set_mode((settings.screen_width, settings.screen_height))
     pygame.display.set_caption("Super Mario Bros")
@@ -58,7 +62,7 @@ def run_game():
         if time == 61:
             time = 1
 
-        check_events(mario, startmenu)
+        check_events(mario, startmenu, mario_jump)
         mario.update(mario_group, foreground, blocks)
         for enemy in enemies:
             enemy.update()
@@ -69,6 +73,7 @@ def run_game():
                              block_contents, enemies, flagpole)
         if startmenu.playgame_select:
             while startmenu.playgame_select:
+                pygame.mixer.music.play()
                 camera.lives_screen = True
                 camera.global_frame = 0
                 camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
@@ -82,7 +87,7 @@ def run_game():
                     time += 1
                     if time == 61:
                         time = 1
-                    check_events(mario, startmenu)
+                    check_events(mario, startmenu, mario_jump)
                     if time % 60 == 0:
                         hud.countdown -= 1
                     mario.update(mario_group, foreground, blocks)
@@ -95,7 +100,7 @@ def run_game():
                                          coins, mario, block_contents, enemies, flagpole)
 
 
-def check_events(mario, startmenu):
+def check_events(mario, startmenu, mario_jump):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
@@ -112,6 +117,7 @@ def check_events(mario, startmenu):
             if event.key == pygame.K_SPACE:
                 if startmenu.playgame_select:
                     mario.jump()
+                    mario_jump.play()
                 elif not startmenu.selection:
                     if not startmenu.highscore_select:
                         startmenu.highscore_select = True
