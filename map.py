@@ -1,6 +1,7 @@
 import pygame
 from animations import Popcoin
 from animations import Brokebricks
+from points_sprite import PointsSprite
 from enemies import Goomba
 from enemies import GreenKoopa
 from pygame.sprite import Sprite
@@ -21,43 +22,51 @@ class Tile(Sprite):
         self.frame = 0
         self.block_type = block_type  # 0 = ? Block Coin, 1 = ? Block Powerup, 2 = Breakable Bricks, 3 = Coin Bricks,
         # 4 = Star Bricks, 5 = Hidden 1UP
-        self.time = 3000 # Time that the coins brick block stays active after hit
-        self.countdown = False # Check when mario hits coins brick block
-        self.y_offset = 0 # For block_push_animation
-        self.fall = False # For block_push_animation
+        self.time = 300  # Time that the coins brick block stays active after hit
+        self.countdown = False  # Check when mario hits coins brick block
+        self.y_offset = 0  # For block_push_animation
+        self.fall = False  # For block_push_animation
+        self.block_push_animation = False
 
     def draw(self, x_offset, global_frame):
         if not isinstance(self.tile_sprite, list) and not self.block_type == 5:
             self.screen.blit(self.tile_sprite, self.rect.move(x_offset, self.y_offset))
         elif not self.block_type == 5 and self.active and self.animated:
-            self.screen.blit(self.tile_sprite[global_frame], self.rect.move(x_offset, self.y_offset))
+            self.screen.blit(self.tile_sprite[global_frame], self.rect.move(x_offset, -self.y_offset))
         elif not self.block_type == 5 and self.active:
             self.screen.blit(self.tile_sprite[0], self.rect.move(x_offset, self.y_offset))
         elif not self.block_type == 5 and not self.active:
-            self.screen.blit(self.tile_sprite[len(self.tile_sprite)], self.rect.move(x_offset, self.y_offset))
+            self.screen.blit(self.tile_sprite[len(self.tile_sprite) - 1], self.rect.move(x_offset, -self.y_offset))
         elif self.block_type == 5 and not self.active:
-            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, self.y_offset))
+            self.screen.blit(self.tile_sprite, self.rect.move(x_offset, -self.y_offset))
+        if self.block_push_animation:
+            if not self.fall:
+                self.y_offset += self.settings.scale["pixel_height"]
+                if self.y_offset == self.settings.scale["pixel_height"] * 4:
+                    self.y_offset -= self.settings.scale["pixel_height"] * 2
+                    self.fall = True
+            elif self.y_offset > 0:
+                self.y_offset -= self.settings.scale["pixel_height"]
+                if self.y_offset == 0 and not self.active:
+                    self.frame = len(self.tile_sprite)
+                    self.block_push_animation = False
+                elif self.y_offset == 0 and self.active:
+                    self.fall = False
+                    self.block_push_animation = False
+        if self.countdown:
+            if self.time > 0:
+                self.time -= 1
 
-    def block_push_animation(self):
-        if not self.fall:
-            self.y_offset += 1
-            if self.y_offset == 4:
-                self.y_offset -= 2
-                self.fall = True
-        elif self.y_offset > 0:
-            self.y_offset -= 1
-            if self.y_offset == 0 and not self.active:
-                self.frame = len(self.tile_sprite)
-
-    def block_reaction(self, block_content_sprites, block_contents):
+    def block_reaction(self, block_content_sprites, block_contents, hud):
         # Pushes out the contents of the block
-        if self.block_type == 0:
+        if self.block_type == 0 and self.active:
             newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
             block_contents.add(newpopcoin)
-            self.block_push_animation()
+            self.block_push_animation = True
             self.active = False
-        elif self.block_type == 1:
-            self.block_push_animation()
+            hud.score += 200
+        elif self.block_type == 1 and self.active:
+            self.block_push_animation = True
             # spawn_powerup()
             self.active = False
         elif self.block_type == 2:
@@ -65,27 +74,29 @@ class Tile(Sprite):
                 newbrokebricks = Brokebricks(self.settings, self.screen, block_content_sprites[1], self.rect.center)
                 block_contents.add(newbrokebricks)
                 self.kill()
+                hud.score += 50
             else:
                 self.block_push_animation()
-        elif self.block_type == 3:
+        elif self.block_type == 3 and self.active:
             if self.countdown:
                 newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
                 block_contents.add(newpopcoin)
-                self.block_push_animation()
+                self.block_push_animation = True
                 if self.time == 0:
                     self.active = False
+                hud.score += 200
             else:
                 newpopcoin = Popcoin(self.settings, self.screen, block_content_sprites[0], self.rect.x, self.rect.top)
                 block_contents.add(newpopcoin)
-                self.block_push_animation()
+                self.block_push_animation = True
                 self.countdown = True
-
-        elif self.block_type == 4:
-            self.block_push_animation()
+                hud.score += 200
+        elif self.block_type == 4 and self.active:
+            self.block_push_animation = True
             # spawn_star()
             self.active = False
-        elif self.block_type == 5:
-            self.block_push_animation()
+        elif self.block_type == 5 and self.active:
+            self.block_push_animation = True
             # spawn_1up()
             self.active = False
 
@@ -94,6 +105,20 @@ class Tile(Sprite):
         for brick in bricks:
             if brick.countdown and brick.active and brick.time > 0:
                 brick.time -= 1
+
+
+class Flag(Sprite):
+    def __init__(self, settings, screen, sprite):
+        super(Flag, self).__init__()
+        self.settings = settings
+        self.screen = screen
+
+        self.sprite = sprite
+        self.rect = pygame.Rect(0, 0, settings.scale["tile_width"], settings.scale["tile_height"])
+        self.rect.x = -settings.scale["tile_width"]
+
+    def draw(self, x_offset):
+        self.screen.blit(self.sprite, self.rect.move(x_offset, 0))
 
 
 class Map:
@@ -171,7 +196,7 @@ class Map:
                         mario.rect.y = self.settings.scale["tile_height"] * y + self.settings.scale["tile_width"] / 2
 
     def sprite_cycler(self, camera, background, foreground, blocks, hidden_blocks, coins, block_contents, enemies,
-                      enemy_sprites, flagpole):
+                      enemy_sprites, flagpole, flag, points, points_font):
         for tile in background:
             if tile.rect.x <= camera.rect.x - self.settings.screen_width/2:
                 tile.kill()
@@ -189,7 +214,10 @@ class Map:
                 entity.kill()
         for sprite in block_contents:
             if isinstance(sprite, Popcoin):
-                if sprite.frame == 9:
+                if sprite.frame == 8:
+                    newpoints = PointsSprite(self.settings, self.screen, points_font, sprite.rect.x, sprite.rect.y,
+                                             200)
+                    points.add(newpoints)
                     sprite.kill()
             if isinstance(sprite, Brokebricks):
                 if sprite.left_rect1.y > self.settings.screen_height:
@@ -228,7 +256,7 @@ class Map:
                                    x, y, True,  int(self.mapmatrix[y][x][1]))
                     blocks.add(newtile)
                 elif self.mapmatrix[y][x][0] == "B":
-                    newtile = Tile(self.settings, self.screen, self.tileset[2:6:4], x, y,
+                    newtile = Tile(self.settings, self.screen, self.tileset[2:7:4], x, y,
                                    False,  int(self.mapmatrix[y][x][1]) + 2)
                     blocks.add(newtile)
                 elif self.mapmatrix[y][x][0] == "H":
@@ -243,6 +271,9 @@ class Map:
                     newtile = Tile(self.settings, self.screen, self.tileset[88 + int(self.mapmatrix[y][x][1])],
                                    x, y, False, None)
                     flagpole.add(newtile)
+                elif self.mapmatrix[y][x] == "AF":
+                    flag.rect.x = x * self.settings.scale["tile_width"] + self.settings.scale["tile_height"] / 2
+                    flag.rect.y = y * self.settings.scale["tile_height"] + self.settings.scale["tile_height"] * 1.5
                 if len(self.mapmatrix[y][x - 8]) == 3:
                     if self.mapmatrix[y][x - 8][2] == "G":
                         newenemy = Goomba(self.settings, self.screen, enemy_sprites[0], x-8, y)

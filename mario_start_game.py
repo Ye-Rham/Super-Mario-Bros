@@ -5,6 +5,7 @@ import sys
 from game_settings import Settings
 from sprite_sheet import SpriteSheet
 from map import Map
+from map import Flag
 from camera import Camera
 from hud import HUD
 from start_menu import StartMenu
@@ -24,11 +25,10 @@ def run_game():
     title_spritesheet = SpriteSheet("images/NES - Super Mario Bros - Title Screen.png", screen)
     tilesets = []
     block_content_sprites = []
-    score_sprites = []
     enemy_sprites = []
     font = initialize_font(settings, font_spritesheet)
     initialize_tilesets(settings, tile_spritesheet, tilesets)
-    initialize_animated_item_sprites(settings, item_spritesheet, block_content_sprites)
+    points_font = initialize_animated_item_sprites(settings, item_spritesheet, block_content_sprites)
     initialize_enemy_sprites(settings, enemy_spritesheet, enemy_sprites)
 
     camera = Camera(settings)
@@ -44,7 +44,11 @@ def run_game():
     coins = Group()
     block_contents = Group()
     flagpole = Group()
+    flag = Flag(settings, screen, item_spritesheet.image_at((128, 32, 16, 16), settings.scale["tile_width"],
+                                                            settings.scale["tile_height"],
+                                                            colorkey=settings.bg_color[0]))
     enemies = Group()
+    points = Group()
     level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
     level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies, enemy_sprites,
                              mario)
@@ -59,25 +63,27 @@ def run_game():
             time = 1
 
         check_events(mario, startmenu)
-        mario.update(mario_group, foreground, blocks)
+        mario.update(mario_group, foreground, blocks, enemies, points, hud, points_font, block_contents,
+                     block_content_sprites, camera)
         for enemy in enemies:
             enemy.update()
         camera.camera_tracking(mario)
         level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins, block_contents,
-                                enemies, enemy_sprites, flagpole)
+                                enemies, enemy_sprites, flagpole, flag, points, points_font)
         camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins, mario,
-                             block_contents, enemies, flagpole)
+                             block_contents, enemies, flagpole, points, flag)
         if startmenu.playgame_select:
             while startmenu.playgame_select:
+                reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole,
+                              points)
+                level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
+                                         enemy_sprites, mario)
                 camera.lives_screen = True
                 camera.global_frame = 0
                 camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
-                                     mario, block_contents, enemies, flagpole)
-                reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole)
-                level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
-                                         enemy_sprites, mario)
+                                     mario, block_contents, enemies, flagpole, points, flag)
                 hud.countdown = 400
-                while not camera.lives_screen:
+                while not camera.lives_screen and startmenu.playgame_select:
                     timer.tick(60)
                     time += 1
                     if time == 61:
@@ -85,14 +91,23 @@ def run_game():
                     check_events(mario, startmenu)
                     if time % 60 == 0:
                         hud.countdown -= 1
-                    mario.update(mario_group, foreground, blocks)
+                    mario.update(mario_group, foreground, blocks, enemies, points, hud, points_font, block_contents,
+                                 block_content_sprites, camera)
                     for enemy in enemies:
                         enemy.update()
                     camera.camera_tracking(mario)
                     level_1_1.sprite_cycler(camera, background, foreground, blocks, hidden_blocks, coins,
-                                            block_contents, enemies, enemy_sprites, flagpole)
+                                            block_contents, enemies, enemy_sprites, flagpole, flag, points,
+                                            points_font)
                     camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks,
-                                         coins, mario, block_contents, enemies, flagpole)
+                                         coins, mario, block_contents, enemies, flagpole, points, flag)
+            reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole,
+                          points)
+            level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
+                                     enemy_sprites, mario)
+            camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
+                                 mario, block_contents, enemies, flagpole, points, flag)
+            hud.reset()
 
 
 def check_events(mario, startmenu):
@@ -127,7 +142,6 @@ def check_events(mario, startmenu):
                     placeholder = "placeholder"
                 elif startmenu.selection:
                     startmenu.selection = False
-
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT:
@@ -168,12 +182,21 @@ def initialize_tilesets(settings, spritesheet, tilesets):
 def initialize_animated_item_sprites(settings, item_spritesheet, block_content_sprites):
     coin_image_rects = ((0, 112, 16, 16), (16, 112, 16, 16), (32, 112, 16, 16), (48, 112, 16, 16))
     brick_image_rects = ((64, 0, 8, 8), (72, 0, 8, 8), (64, 8, 8, 8), (72, 8, 8, 8))
+    score_image_rects = ((0, 168, 4, 8), (4, 168, 4, 8), (8, 168, 4, 8), (12, 168, 4, 8), (16, 168, 4, 8),
+                         (20, 168, 4, 8))
     block_content_sprites.append(item_spritesheet.images_at(coin_image_rects, settings.scale["tile_width"],
                                                             settings.scale["tile_height"],
                                                             colorkey=settings.bg_color[0]))
     block_content_sprites.append(item_spritesheet.images_at(brick_image_rects, settings.scale["tile_width"]/4,
                                                             settings.scale["tile_height"]/4,
                                                             colorkey=settings.bg_color[0]))
+    score_sprites = item_spritesheet.images_at(score_image_rects, settings.scale["pixel_width"] * 4,
+                                               settings.scale["pixel_height"] * 8, colorkey=settings.bg_color[0])
+    score_sprites.append(item_spritesheet.image_at((32, 168, 16, 8), settings.scale["tile_width"],
+                                                   settings.scale["pixel_height"] * 8, colorkey=settings.bg_color[0]))
+
+    return {"0": score_sprites[0], "1": score_sprites[1], "2": score_sprites[2], "4": score_sprites[3],
+            "5": score_sprites[4], "8": score_sprites[5], "1UP": score_sprites[6]}
 
 
 def initialize_enemy_sprites(settings, enemy_spritesheet, enemy_sprites):
@@ -208,7 +231,7 @@ def initialize_font(settings, font_spritesheet):
             "-": font_sprites[36], "x": font_sprites[37]}
 
 
-def reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole):
+def reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole, points):
     for sprite in background:
         sprite.kill()
     for sprite in foreground:
@@ -224,6 +247,8 @@ def reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_co
     for sprite in enemies:
         sprite.kill()
     for sprite in flagpole:
+        sprite.kill()
+    for sprite in points:
         sprite.kill()
 
 

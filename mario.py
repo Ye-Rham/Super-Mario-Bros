@@ -2,6 +2,10 @@ import pygame
 import math
 from pygame.sprite import Sprite
 
+from enemies import Goomba
+from enemies import GreenKoopa
+from points_sprite import PointsSprite
+
 
 class Mario(Sprite):
 
@@ -55,6 +59,10 @@ class Mario(Sprite):
         self.block_x = 0
         self.block_width = 10000
         self.colliding = False
+
+        # Points related values
+        self.point_values = (100, 200, 400, 500, 800, 1000, 2000, 4000, 5000, 8000, 0)
+        self.jump_counter = 0
 
 
     def calculate_changed_velocity(self):
@@ -116,7 +124,8 @@ class Mario(Sprite):
         if collisions:
             return True
 
-    def update(self, mario_group, foreground, blocks):
+    def update(self, mario_group, foreground, blocks, enemies, points, hud, font, block_contents,
+               block_content_sprites, camera):
         self.update_velocity()
 
         self.step_tracker += 1
@@ -191,7 +200,6 @@ class Mario(Sprite):
 
             # collided with bottom
             if difference_one < difference_two:
-                self.rect.y += math.floor(self.y_velocity)
                 self.delta_t += 40
             else:  # collided with top
                 self.floor = potential_floor
@@ -201,12 +209,69 @@ class Mario(Sprite):
             self.y_velocity = 0
             self.delta_t = 0
             self.rect.y = self.floor
+            self.jump_counter = 0
 
         # Only kicks in if above the natural floor
         if (self.rect.x > (self.block_x + (self.block_width / 2)) or
            self.rect.x < (self.block_x - (self.block_width / 2))) and self.rect.y < 550 and self.colliding is False:
 
             self.jump_active = True
+
+        collisions1 = pygame.sprite.spritecollide(self, enemies, False)
+        collisions2 = pygame.sprite.spritecollide(self, blocks, False)
+        for enemy in collisions1:
+            if self.jump_active and self.y_velocity < 0 and enemy.alive:
+                if isinstance(enemy, Goomba):
+                    enemy.squish = True
+                    enemy.alive = False
+                    enemy.frame = 2
+                    hud.score += self.point_values[self.jump_counter]
+                    if self.jump_counter == 11:
+                        hud.lives += 1
+                    newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
+                                             self.point_values[self.jump_counter])
+                    points.add(newpoints)
+                    if self.jump_counter < 10:
+                        self.jump_counter += 1
+                    self.y_velocity = 10
+                elif isinstance(enemy, GreenKoopa):
+                    if not enemy.tuck:
+                        enemy.tuck = True
+                        enemy.frame = 2
+                        hud.score += self.point_values[self.jump_counter]
+                        if self.jump_counter == 11:
+                            hud.lives += 1
+                        newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
+                                                 self.point_values[self.jump_counter])
+                        points.add(newpoints)
+                        if self.jump_counter < 10:
+                            self.jump_counter += 1
+                        self.y_velocity = 10
+                    elif enemy.tuck and not enemy.kicked:
+                        enemy.kicked = True
+                        if self.last_moved_direction == 'left':
+                            enemy.direction = False
+                        elif self.last_moved_direction == 'right':
+                            enemy.direction = True
+                    elif enemy.tuck and enemy.kicked:
+                        enemy.kicked = False
+                        hud.score += self.point_values[self.jump_counter]
+                        if self.jump_counter == 11:
+                            hud.lives += 1
+                        newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
+                                                 self.point_values[self.jump_counter])
+                        points.add(newpoints)
+                        if self.jump_counter < 10:
+                            self.jump_counter += 1
+                        self.y_velocity = 10
+        for block in collisions2:
+            if self.y_velocity > 0 and self.jump_active:
+                block.block_reaction(block_content_sprites, block_contents, hud)
+                self.rect.y = block.rect.bottom + 1
+
+        if self.rect.x < camera.rect.x:
+            self.rect.x = camera.rect.x
+            self.x_velocity = 0
 
     def change_sprite_image_direction(self, new_direction):
         self.last_moved_direction = self.direction

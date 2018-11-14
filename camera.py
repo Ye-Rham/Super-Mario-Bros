@@ -35,11 +35,12 @@ class Camera:
             self.x_offset = -self.rect.x
 
     def update_screen(self, screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins, mario,
-                      block_contents, enemies, flagpole):
+                      block_contents, enemies, flagpole, points, flag):
         if not self.lives_screen:
             screen.fill(self.settings.bg_color[self.level_type])
             self.draw_level(background, foreground, blocks, hidden_blocks, coins, flagpole)
-            self.draw_active_objects(block_contents, enemies)
+            flag.draw(self.x_offset)
+            self.draw_active_objects(block_contents, enemies, points)
             mario.blitme(self.x_offset)
             if not startmenu.playgame_select:
                 startmenu.draw(self.x_offset)
@@ -48,7 +49,7 @@ class Camera:
             pygame.display.flip()
         else:
             screen.fill(self.settings.bg_color[1])
-            hud.draw(self.level_type, self.global_frame)
+            hud.draw(1, self.global_frame)
             hud.draw_lives_screen(mario)
             pygame.display.flip()
             sleep(3)
@@ -70,15 +71,18 @@ class Camera:
         for tile in flagpole:
             tile.draw(self.x_offset, self.global_frame)
 
-    def draw_active_objects(self, block_contents, enemies):
+    def draw_active_objects(self, block_contents, enemies, points):
         for sprite in block_contents:
             sprite.draw(self.x_offset)
         for enemy in enemies:
             enemy.draw(self.x_offset)
+        for point in points:
+            point.draw(self.x_offset)
 
     def frame_management(self, time, block_contents, enemies):
         for sprite in block_contents:
-            sprite.frame += 1
+            if time % 2 == 0:
+                sprite.frame += 1
         if self.flash_count < 60:
             self.flash_count += 1
         if time % 10 == 0 and self.flash_count == 60:

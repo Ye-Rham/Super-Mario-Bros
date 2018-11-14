@@ -25,7 +25,7 @@ class Goomba(Sprite):
     def update(self):
         if not self.direction and not self.squish and self.alive:
             self.rect.x -= self.x_velocity
-        else:
+        elif not self.squish:
             self.rect.x += self.x_velocity
         if (self.fall or not self.alive) and not self.squish:
             self.rect.y += self.y_velocity
@@ -63,7 +63,7 @@ class GreenKoopa(Sprite):
 
         self.frame = 0
         self.x_velocity = self.settings.scale["pixel_width"]/3
-        self.x_velocity_kick = self.settings.scale["pixel_width"]*2
+        self.x_velocity_kick = self.settings.scale["pixel_width"]*3
         self.y_velocity = 0
         self.direction = False
         self.fall = False
