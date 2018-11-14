@@ -59,4 +59,5 @@ class Brokebricks(Sprite):
         self.right_rect2.y -= self.y_velocity2
 
         if self.frame % 2 == 0:
-            self.velocity -= self.decceleration
+            self.y_velocity1 -= self.decceleration
+            self.y_velocity2 -= self.decceleration

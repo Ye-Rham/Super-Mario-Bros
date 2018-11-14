@@ -102,7 +102,7 @@ class HUD(Sprite):
                                                                           self.settings.scale["pixel_height"] * 80))
             rect = mario.image_list_small[0].get_rect()
             rect.x = self.rect.x + self.settings.scale["pixel_width"] * 72
-            rect.y = self.rect.y + self.settings.scale["pixel_height"] * 88
+            rect.y = self.rect.y + self.settings.scale["pixel_height"] * 104
             self.screen.blit(mario.image_list_small[0], rect)
             self.screen.blit(self.font["x"], self.rect.move(self.settings.scale["pixel_width"] * 96,
                                                             self.settings.scale["pixel_height"] * 112))
