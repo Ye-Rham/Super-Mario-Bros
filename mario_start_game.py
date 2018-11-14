@@ -128,8 +128,19 @@ def run_game():
             level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
                                      enemy_sprites, mario)
             channel1.play(game_sounds["Game Over"])
+
             camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
                                  mario, block_contents, enemies, flagpole, points, flag)
+            for x in range(0, len(startmenu.high_score_list)):
+                if hud.score > startmenu.high_score_list[x]:
+                    startmenu.high_score_list.insert(x, hud.score)
+                    startmenu.high_score_list.pop()
+                    break
+            high_score_file = open("High_Scores.txt", "w")
+            for x in range(0, len(startmenu.high_score_list) - 1):
+                high_score_file.write(str(startmenu.high_score_list[x]) + "\n")
+            high_score_file.write(str(startmenu.high_score_list[8]))
+            high_score_file.close()
             hud.reset()
 
 
