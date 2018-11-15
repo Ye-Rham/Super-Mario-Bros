@@ -148,234 +148,227 @@ class Mario(Sprite):
                block_content_sprites, camera, game_sounds, channel1):
         self.update_velocity()
 
-        if not self.activate_overworld and self.settings.current_level == "underworld":
-            self.check_overworld()
-
-        if self.activate_underworld:
-            self.warp_count += 1
-            self.rect.y += 1
-            self.warp.play()
-
-            if self.warp_count == 50:
-                self.warp_count = 0
-                self.activate_underworld = False
-                self.settings.current_level = "underworld"
-
-        elif self.activate_overworld:
-            self.warp_count += 1
-            self.rect.x += 1
-            self.warp.play()
-
-            if self.warp_count == 50:
-                self.warp_count = 0
-                self.activate_overworld = False
-                self.settings.current_level = "overworld"
-
+        if self.rect.x >= 9600:
+            if self.rect.y < 600:
+                self.rect.y += 2
+            else:
+                if self.rect.x <= 9900:
+                    self.rect.x += 2
+                else:
+                    print("endgame here")
         else:
 
-            self.update_velocity()
+            if not self.activate_overworld and self.settings.current_level == "underworld":
+                self.check_overworld()
 
-            self.step_tracker += 1
-            if abs(self.x_velocity) > 1:
-                self.rect.x += self.x_velocity
-            # Collision Checking
-            if self.isColliding(mario_group, foreground) or self.isColliding(mario_group, blocks):
-                # Difference between floor and ceiling
+            if self.activate_underworld:
+                self.warp_count += 1
+                self.rect.y += 1
+                self.warp.play()
 
-                self.rect.x += self.x_velocity * -1 * 2
-                self.x_velocity = 0
+                if self.warp_count == 50:
+                    self.warp_count = 0
+                    self.activate_underworld = False
+                    self.settings.current_level = "underworld"
 
-            if self.step_tracker > 30:
-                self.step_tracker = 1
+            elif self.activate_overworld:
+                self.warp_count += 1
+                self.rect.x += 1
+                self.warp.play()
 
-            if self.x_velocity < 0.1 and self.x_velocity > -0.1:
-                if self.health == 1:
-                    self.image = self.image_list_small[0]
-                elif self.health == 2:
-                    self.image = self.image_list_big[0]
-
-                if self.last_moved_direction == 'left':
-                    self.image = pygame.transform.flip(self.image, True, False)
+                if self.warp_count == 50:
+                    self.warp_count = 0
+                    self.activate_overworld = False
+                    self.settings.current_level = "overworld"
 
             else:
-                if self.step_tracker == 1:
+
+                self.update_velocity()
+
+                self.step_tracker += 1
+                if abs(self.x_velocity) > 1:
+                    self.rect.x += self.x_velocity
+                # Collision Checking
+                if self.isColliding(mario_group, foreground) or self.isColliding(mario_group, blocks):
+                    # Difference between floor and ceiling
+
+                    self.rect.x += self.x_velocity * -1 * 2
+                    self.x_velocity = 0
+
+                if self.step_tracker > 30:
+                    self.step_tracker = 1
+
+                if self.x_velocity < 0.1 and self.x_velocity > -0.1:
                     if self.health == 1:
-                        self.image = self.image_list_small[self.walking_index]
+                        self.image = self.image_list_small[0]
                     elif self.health == 2:
-                        self.image = self.image_list_big[self.walking_index]
-                    if self.x_velocity < 0 or self.left_key_down is True:
+                        self.image = self.image_list_big[0]
+
+                    if self.last_moved_direction == 'left':
                         self.image = pygame.transform.flip(self.image, True, False)
 
-                if self.step_tracker % self.update_after_frames == 0:
-                    self.walking_index += 1
-                    if self.walking_index > 3:
-                        self.walking_index = 1
-                    if self.health == 1:
-                        self.image = self.image_list_small[self.walking_index]
-                    elif self.health == 2:
-                        self.image = self.image_list_big[self.walking_index]
-                    if self.x_velocity < 0 or self.left_key_down is True:
-                        self.image = pygame.transform.flip(self.image, True, False)
-                    if self.x_velocity < 0 and self.left_key_down is False and self.right_key_down is True:
+                else:
+                    if self.step_tracker == 1:
                         if self.health == 1:
                             self.image = self.image_list_small[self.walking_index]
                         elif self.health == 2:
                             self.image = self.image_list_big[self.walking_index]
+                        if self.x_velocity < 0 or self.left_key_down is True:
+                            self.image = pygame.transform.flip(self.image, True, False)
 
-            if self.jump_active:
-                self.delta_t += 1  # where this is time
-                self.y_velocity -= self.gravity * self.delta_t / 20
-                if self.y_velocity > self.max_y_velocity:
-                    self.y_velocity = self.max_y_velocity
-                if self.health == 1:
-                    self.image = self.image_list_small[5]
-                elif self.health == 2:
-                    self.image = self.image_list_big[5]
-                self.floor = self.natural_floor
-                if self.direction == 'left' or self.last_moved_direction == 'left':
-                    self.image = pygame.transform.flip(self.image, True, False)
+                    if self.step_tracker % self.update_after_frames == 0:
+                        self.walking_index += 1
+                        if self.walking_index > 3:
+                            self.walking_index = 1
+                        if self.health == 1:
+                            self.image = self.image_list_small[self.walking_index]
+                        elif self.health == 2:
+                            self.image = self.image_list_big[self.walking_index]
+                        if self.x_velocity < 0 or self.left_key_down is True:
+                            self.image = pygame.transform.flip(self.image, True, False)
+                        if self.x_velocity < 0 and self.left_key_down is False and self.right_key_down is True:
+                            if self.health == 1:
+                                self.image = self.image_list_small[self.walking_index]
+                            elif self.health == 2:
+                                self.image = self.image_list_big[self.walking_index]
 
-            self.rect.y -= math.floor(self.y_velocity)
+                if self.jump_active:
+                    self.delta_t += 1  # where this is time
+                    self.y_velocity -= self.gravity * self.delta_t / 20
+                    if self.y_velocity > self.max_y_velocity:
+                        self.y_velocity = self.max_y_velocity
+                    if self.health == 1:
+                        self.image = self.image_list_small[5]
+                    elif self.health == 2:
+                        self.image = self.image_list_big[5]
+                    self.floor = self.natural_floor
+                    if self.direction == 'left' or self.last_moved_direction == 'left':
+                        self.image = pygame.transform.flip(self.image, True, False)
 
-        self.colliding = False
+                self.rect.y -= math.floor(self.y_velocity)
 
-        # if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
-        #     # check if colliding with bottom or top of block
-        #     collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
-        #     if collisions:
-        #         self.colliding = True
-        #         for collides in collisions.values():
-        #             for collide in collides:
-        #                 difference_one = abs(self.rect.top - collide.rect.bottom)
-        #                 difference_two = abs(self.rect.bottom - collide.rect.top)
-        #                 potential_floor = collide.rect.top - 96
-        #                 self.block_width = collide.rect.right - collide.rect.left
-        #                 self.block_height = collide.rect.top - collide.rect.bottom
-        #                 self.block_x = collide.rect.x
-        #
-        #     collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
-        #     if collisions:
-        #         #print("Collided!")
-        #         #print(self.rect.y)
-        #         self.colliding = True
-        #         for collides in collisions.values():
-        #             for collide in collides:
-        #                 difference_one = abs(self.rect.top - collide.rect.bottom)
-        #                 difference_two = abs(self.rect.bottom - collide.rect.top)
-        #                 potential_floor = collide.rect.top - 96
-        #                 self.block_width = collide.rect.right - collide.rect.left
-        #                 self.block_height = collide.rect.top - collide.rect.bottom
-        #                 self.block_x = collide.rect.x
-        #
-        #     # collided with bottom
-        #     if difference_one < difference_two:
-        #         self.delta_t += 40
-        #     else:  # collided with top
-        #         self.floor = potential_floor
-        #
-        # if self.rect.y >= self.floor:  # player hits the ground
-        #     print("hits ground")
-        #     self.jump_active = False
-        #     self.y_velocity = 0
-        #     self.delta_t = 0
-        #     self.rect.y = self.floor
-        #     self.jump_counter = 0
-        #     if self.health == 1:
-        #         self.rect.y += self.small_difference
-        #
-        # # Only kicks in if above the natural floor
-        # if (self.rect.x > (self.block_x + (self.block_width)) + 5 or
-        #    self.rect.x < (self.block_x - (self.block_width)) - 5) and self.rect.y < self.natural_floor and self.colliding is False:
-        #     # If future you is colliding, skip
-        #
-        #     self.rect.y += 76
-        #     mario_group.add(self)
-        #     #self.rect.x += self.block_width / 2
+            self.colliding = False
 
-        if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
-            self.forced = False
-            # check if colliding with bottom or top of block
-            collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
-            if collisions:
-                self.colliding = True
-                for collides in collisions.values():
-                    for collide in collides:
-                        difference_one = abs(self.rect.top - collide.rect.bottom)
-                        difference_two = abs(self.rect.bottom - collide.rect.top)
-                        potential_floor = collide.rect.top - 96
-                        self.block_width = collide.rect.right - collide.rect.left
-                        self.block_height = collide.rect.top - collide.rect.bottom
-                        self.block_x = collide.rect.x
+            # if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
+            #     # check if colliding with bottom or top of block
+            #     collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
+            #     if collisions:
+            #         self.colliding = True
+            #         for collides in collisions.values():
+            #             for collide in collides:
+            #                 difference_one = abs(self.rect.top - collide.rect.bottom)
+            #                 difference_two = abs(self.rect.bottom - collide.rect.top)
+            #                 potential_floor = collide.rect.top - 96
+            #                 self.block_width = collide.rect.right - collide.rect.left
+            #                 self.block_height = collide.rect.top - collide.rect.bottom
+            #                 self.block_x = collide.rect.x
+            #
+            #     collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
+            #     if collisions:
+            #         #print("Collided!")
+            #         #print(self.rect.y)
+            #         self.colliding = True
+            #         for collides in collisions.values():
+            #             for collide in collides:
+            #                 difference_one = abs(self.rect.top - collide.rect.bottom)
+            #                 difference_two = abs(self.rect.bottom - collide.rect.top)
+            #                 potential_floor = collide.rect.top - 96
+            #                 self.block_width = collide.rect.right - collide.rect.left
+            #                 self.block_height = collide.rect.top - collide.rect.bottom
+            #                 self.block_x = collide.rect.x
+            #
+            #     # collided with bottom
+            #     if difference_one < difference_two:
+            #         self.delta_t += 40
+            #     else:  # collided with top
+            #         self.floor = potential_floor
+            #
+            # if self.rect.y >= self.floor:  # player hits the ground
+            #     print("hits ground")
+            #     self.jump_active = False
+            #     self.y_velocity = 0
+            #     self.delta_t = 0
+            #     self.rect.y = self.floor
+            #     self.jump_counter = 0
+            #     if self.health == 1:
+            #         self.rect.y += self.small_difference
+            #
+            # # Only kicks in if above the natural floor
+            # if (self.rect.x > (self.block_x + (self.block_width)) + 5 or
+            #    self.rect.x < (self.block_x - (self.block_width)) - 5) and self.rect.y < self.natural_floor and self.colliding is False:
+            #     # If future you is colliding, skip
+            #
+            #     self.rect.y += 76
+            #     mario_group.add(self)
+            #     #self.rect.x += self.block_width / 2
 
-            collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
-            if collisions:
-                self.colliding = True
-                for collides in collisions.values():
-                    for collide in collides:
-                        difference_one = abs(self.rect.top - collide.rect.bottom)
-                        difference_two = abs(self.rect.bottom - collide.rect.top)
-                        potential_floor = collide.rect.top - 96
-                        self.block_width = collide.rect.right - collide.rect.left
-                        self.block_height = collide.rect.top - collide.rect.bottom
-                        self.block_x = collide.rect.x
-
-            # collided with bottom
-            if difference_one < difference_two:
-                #self.rect.y += math.floor(self.y_velocity)
-                self.delta_t += 40
-            else:  # collided with top
-                self.floor = potential_floor
-
-        if self.rect.y >= self.floor:  # player hits the ground
-            self.jump_active = False
-            self.y_velocity = 0
-            self.delta_t = 0
-            self.rect.y = self.floor
-            if self.health == 1:
-                self.rect.y += self.small_difference
-
-        # Only kicks in if above the natural floor
-        if (self.rect.x > (self.block_x + (self.block_width)) + 5 or
-            self.rect.x < (self.block_x - (self.block_width)) - 5) and self.rect.y < self.natural_floor \
-                and self.colliding is False:
-            # If future you is colliding, skip
-
-            self.rect.y += 76
-            mario_group.add(self)
-            # self.rect.x += self.block_width / 2
             if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
-                self.future_collide(mario_group, blocks, foreground)
-            else:
-                self.jump_active = True
+                self.forced = False
+                # check if colliding with bottom or top of block
+                collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)
+                if collisions:
+                    self.colliding = True
+                    for collides in collisions.values():
+                        for collide in collides:
+                            difference_one = abs(self.rect.top - collide.rect.bottom)
+                            difference_two = abs(self.rect.bottom - collide.rect.top)
+                            potential_floor = collide.rect.top - 96
+                            self.block_width = collide.rect.right - collide.rect.left
+                            self.block_height = collide.rect.top - collide.rect.bottom
+                            self.block_x = collide.rect.x
 
-            self.rect.y -= 76
-            # self.rect.x -= self.block_width / 2
+                collisions = pygame.sprite.groupcollide(mario_group, foreground, False, False)
+                if collisions:
+                    self.colliding = True
+                    for collides in collisions.values():
+                        for collide in collides:
+                            difference_one = abs(self.rect.top - collide.rect.bottom)
+                            difference_two = abs(self.rect.bottom - collide.rect.top)
+                            potential_floor = collide.rect.top - 96
+                            self.block_width = collide.rect.right - collide.rect.left
+                            self.block_height = collide.rect.top - collide.rect.bottom
+                            self.block_x = collide.rect.x
 
-        collisions1 = pygame.sprite.spritecollide(self, enemies, False)
-        collisions2 = pygame.sprite.spritecollide(self, blocks, False)
-        collisions3 = pygame.sprite.spritecollide(self, hidden_blocks, False)
-        for enemy in collisions1:
-            if self.jump_active and self.y_velocity < 0 and enemy.alive:
-                if isinstance(enemy, Goomba):
-                    enemy.squish = True
-                    enemy.alive = False
-                    enemy.frame = 2
-                    hud.score += self.point_values[self.jump_counter]
-                    if self.jump_counter == 11:
-                        hud.lives += 1
-                    newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
-                                             self.point_values[self.jump_counter])
-                    points.add(newpoints)
-                    if self.jump_counter < 10:
-                        self.jump_counter += 1
-                    self.y_velocity = 5
-                    self.delta_t = 1
-                    channel1.play(game_sounds["Squish"])
-                    if self.jump_counter == 11:
-                        channel1.play(game_sounds["1UP"])
-                elif isinstance(enemy, GreenKoopa):
-                    if not enemy.tuck:
-                        enemy.tuck = True
+                # collided with bottom
+                if difference_one < difference_two:
+                    #self.rect.y += math.floor(self.y_velocity)
+                    self.delta_t += 40
+                else:  # collided with top
+                    self.floor = potential_floor
+
+            if self.rect.y >= self.floor:  # player hits the ground
+                self.jump_active = False
+                self.y_velocity = 0
+                self.delta_t = 0
+                self.rect.y = self.floor
+                if self.health == 1:
+                    self.rect.y += self.small_difference
+
+            # Only kicks in if above the natural floor
+            if (self.rect.x > (self.block_x + (self.block_width)) + 5 or
+                self.rect.x < (self.block_x - (self.block_width)) - 5) and self.rect.y < self.natural_floor \
+                    and self.colliding is False:
+                # If future you is colliding, skip
+
+                self.rect.y += 76
+                mario_group.add(self)
+                # self.rect.x += self.block_width / 2
+                if self.isColliding(mario_group, blocks) or self.isColliding(mario_group, foreground):
+                    self.future_collide(mario_group, blocks, foreground)
+                else:
+                    self.jump_active = True
+
+                self.rect.y -= 76
+                # self.rect.x -= self.block_width / 2
+
+            collisions1 = pygame.sprite.spritecollide(self, enemies, False)
+            collisions2 = pygame.sprite.spritecollide(self, blocks, False)
+            collisions3 = pygame.sprite.spritecollide(self, hidden_blocks, False)
+            for enemy in collisions1:
+                if self.jump_active and self.y_velocity < 0 and enemy.alive:
+                    if isinstance(enemy, Goomba):
+                        enemy.squish = True
+                        enemy.alive = False
                         enemy.frame = 2
                         hud.score += self.point_values[self.jump_counter]
                         if self.jump_counter == 11:
@@ -387,50 +380,67 @@ class Mario(Sprite):
                             self.jump_counter += 1
                         self.y_velocity = 5
                         self.delta_t = 1
-                        self.rect.bottom = enemy.rect.top
                         channel1.play(game_sounds["Squish"])
-                        if self.jump_counter == 10:
+                        if self.jump_counter == 11:
                             channel1.play(game_sounds["1UP"])
-                    elif enemy.tuck and not enemy.kicked:
-                        enemy.kicked = True
-                        enemy.tuck_timer = 0
-                        if self.last_moved_direction == 'left':
-                            enemy.direction = False
-                            enemy.rect.right = self.rect.left
-                        elif self.last_moved_direction == 'right':
-                            enemy.direction = True
-                            enemy.rect.left = self.rect.right
-                        channel1.play(game_sounds["Kick"])
-                    elif enemy.tuck and enemy.kicked:
-                        enemy.kicked = False
-                        hud.score += self.point_values[self.jump_counter]
-                        if self.jump_counter == 10:
-                            hud.lives += 1
-                        newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
-                                                 self.point_values[self.jump_counter])
-                        points.add(newpoints)
-                        if self.jump_counter < 10:
-                            self.jump_counter += 1
-                        self.y_velocity = 5
-                        self.delta_t = 1
-                        self.rect.bottom = enemy.rect.top
-                        channel1.play(game_sounds["Squish"])
-                        if self.jump_counter == 10:
-                            channel1.play(game_sounds["1UP"])
-        for block in collisions2:
-            if self.y_velocity > 0 and self.jump_active:
-                block.block_reaction(block_content_sprites, block_contents, hud, self, game_sounds, channel1)
-                self.rect.y = block.rect.bottom
-                self.y_velocity = 0
-        for hidden_block in collisions3:
-            if self.y_velocity > 0 and self.jump_active:
-                hidden_block.block_reaction(block_content_sprites, block_contents, hud, self, game_sounds, channel1)
-                self.rect.y = hidden_block.rect.bottom
-                self.y_velocity = 0
+                    elif isinstance(enemy, GreenKoopa):
+                        if not enemy.tuck:
+                            enemy.tuck = True
+                            enemy.frame = 2
+                            hud.score += self.point_values[self.jump_counter]
+                            if self.jump_counter == 11:
+                                hud.lives += 1
+                            newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
+                                                     self.point_values[self.jump_counter])
+                            points.add(newpoints)
+                            if self.jump_counter < 10:
+                                self.jump_counter += 1
+                            self.y_velocity = 5
+                            self.delta_t = 1
+                            self.rect.bottom = enemy.rect.top
+                            channel1.play(game_sounds["Squish"])
+                            if self.jump_counter == 10:
+                                channel1.play(game_sounds["1UP"])
+                        elif enemy.tuck and not enemy.kicked:
+                            enemy.kicked = True
+                            enemy.tuck_timer = 0
+                            if self.last_moved_direction == 'left':
+                                enemy.direction = False
+                                enemy.rect.right = self.rect.left
+                            elif self.last_moved_direction == 'right':
+                                enemy.direction = True
+                                enemy.rect.left = self.rect.right
+                            channel1.play(game_sounds["Kick"])
+                        elif enemy.tuck and enemy.kicked:
+                            enemy.kicked = False
+                            hud.score += self.point_values[self.jump_counter]
+                            if self.jump_counter == 10:
+                                hud.lives += 1
+                            newpoints = PointsSprite(self.settings, self.screen, font, enemy.rect.x, enemy.rect.y,
+                                                     self.point_values[self.jump_counter])
+                            points.add(newpoints)
+                            if self.jump_counter < 10:
+                                self.jump_counter += 1
+                            self.y_velocity = 5
+                            self.delta_t = 1
+                            self.rect.bottom = enemy.rect.top
+                            channel1.play(game_sounds["Squish"])
+                            if self.jump_counter == 10:
+                                channel1.play(game_sounds["1UP"])
+            for block in collisions2:
+                if self.y_velocity > 0 and self.jump_active:
+                    block.block_reaction(block_content_sprites, block_contents, hud, self, game_sounds, channel1)
+                    self.rect.y = block.rect.bottom
+                    self.y_velocity = 0
+            for hidden_block in collisions3:
+                if self.y_velocity > 0 and self.jump_active:
+                    hidden_block.block_reaction(block_content_sprites, block_contents, hud, self, game_sounds, channel1)
+                    self.rect.y = hidden_block.rect.bottom
+                    self.y_velocity = 0
 
-        if self.rect.x < camera.rect.x:
-            self.rect.x = camera.rect.x
-            self.x_velocity = 0
+            if self.rect.x < camera.rect.x:
+                self.rect.x = camera.rect.x
+                self.x_velocity = 0
 
     def future_collide(self, mario_group, blocks, foreground):
         collisions = pygame.sprite.groupcollide(mario_group, blocks, False, False)

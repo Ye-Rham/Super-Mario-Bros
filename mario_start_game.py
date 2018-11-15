@@ -134,8 +134,9 @@ def run_game():
                                 mario.rect.y = 450
                                 mario.floor = mario.rect.y
                                 first = False
+                                level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
+
                             camera.rect.x = mario.rect.x - 200
-                            level_1_1 = Map(settings, screen, "level_maps/1-1 Overworld.txt", tilesets[0], camera)
                             level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins,
                                                      enemies, enemy_sprites, mario, True)
 
@@ -160,8 +161,8 @@ def run_game():
                                          coins, mario, block_contents, enemies, flagpole, points, flag)
             reset_sprites(background, foreground, blocks, hidden_blocks, coins, block_contents, enemies, flagpole,
                           points)
-            level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
-                                     enemy_sprites, mario)
+            #level_1_1.initialize_map(camera, background, foreground, blocks, hidden_blocks, coins, enemies,
+            #                         enemy_sprites, mario)
             channel1.play(game_sounds["Game Over"])
 
             camera.update_screen(screen, time, hud, startmenu, background, foreground, blocks, hidden_blocks, coins,
